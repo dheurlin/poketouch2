@@ -3,12 +3,9 @@ package xyz.heurlin.poketouch.components
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Alignment
@@ -24,15 +21,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.flow.collect
-import xyz.heurlin.poketouch.Buttons
+import xyz.heurlin.poketouch.Button
 import xyz.heurlin.poketouch.ControllerAction
 import xyz.heurlin.poketouch.DpadDirection
 import xyz.heurlin.poketouch.ui.theme.PokeTouch2Theme
@@ -60,7 +55,7 @@ fun Dpad(
             onDirectionChange = { onButtonPressed(ControllerAction.DpadPress(it)) },
         )
         AButton(
-            onClick = { onButtonPressed(ControllerAction.ButtonPress(Buttons.A)) },
+            onClick = { onButtonPressed(ControllerAction.ButtonPress(Button.A)) },
             onRelease = { onButtonPressed(ControllerAction.ReleaseAll) },
             size = RADIUS / 4
         )

@@ -16,7 +16,7 @@ enum class DpadDirection {
     Right,
 }
 
-enum class Buttons {
+enum class Button {
     A,
     B,
     Select,
@@ -25,17 +25,17 @@ enum class Buttons {
 
 data class ControllerState(
     var direction: DpadDirection? = null,
-    var buttonsPressed: MutableMap<Buttons, Boolean> = mutableMapOf(
-        Buttons.A to false,
-        Buttons.B to false,
-        Buttons.Select to false,
-        Buttons.Start to false,
+    var buttonsPressed: MutableMap<Button, Boolean> = mutableMapOf(
+        Button.A to false,
+        Button.B to false,
+        Button.Select to false,
+        Button.Start to false,
     )
 )
 
 sealed class ControllerAction {
     object ReleaseAll : ControllerAction()
-    data class ButtonPress(val button: Buttons): ControllerAction()
+    data class ButtonPress(val button: Button): ControllerAction()
     data class DpadPress(val direction: DpadDirection?): ControllerAction()
 }
 

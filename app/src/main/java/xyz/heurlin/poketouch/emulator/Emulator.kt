@@ -5,7 +5,7 @@ import android.app.Activity
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
-import xyz.heurlin.poketouch.Buttons
+import xyz.heurlin.poketouch.Button
 import xyz.heurlin.poketouch.ControllerState
 import xyz.heurlin.poketouch.DpadDirection
 import xyz.heurlin.poketouch.components.ScreenView
@@ -105,10 +105,10 @@ class Emulator(
             if (controllerState.direction == DpadDirection.Down) 1 else 0,
             if (controllerState.direction == DpadDirection.Left) 1 else 0,
 
-            if (controllerState.buttonsPressed[Buttons.A] == true) 1 else 0,
+            if (controllerState.buttonsPressed[Button.A] == true) 1 else 0,
             b, // B
             0, // SELECT
-            if (controllerState.buttonsPressed[Buttons.Start] == true) 1 else 0,
+            if (controllerState.buttonsPressed[Button.Start] == true) 1 else 0,
         )
     }
 
