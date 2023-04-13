@@ -27,14 +27,13 @@ class Emulator(
     private var audioBufLen = 0
 
     var running = false
-    var shouldLoadState = false
-    var shouldSaveState = false
+    private var shouldLoadState = false
+    private var shouldSaveState = false
     var backPressed = false
 
     private lateinit var audio: AudioTrack
 
-//    private val breakMan: BreakpointManager = BreakpointManager(wasmBoy)
-//    private val stateMan: StateManager = StateManager(wasmBoy, breakMan, controller, activity)
+    private val interceptor = GameLoopInterceptor(wasmBoy)
 
     init {
         loadRom(rom)
@@ -223,7 +222,7 @@ class Emulator(
                 if (shouldSaveState) _saveState()
 
                 if (response == Response.BREAKPOINT.code) {
-//                    stateMan.act()
+                    interceptor.intercept()
                 }
                 if (response > Response.OK.code) {
                     screen.getPixelsFromEmulator(wasmBoy)
