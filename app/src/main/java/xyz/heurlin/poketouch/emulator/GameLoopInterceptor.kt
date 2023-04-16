@@ -60,24 +60,31 @@ class GameLoopInterceptor(
                     updateControllerMode(ControllerMode.Dpad)
                 }
 
-                wasmBoy.memory.put(
-                    wasmBoy.getWasmBoyOffsetFromGameBoyOffset(Offsets.wBattleMenuCursorPosition),
-                    menuOption?.toByte()
-                        ?: throw IllegalStateException("[GameLoopInterceptor] Action chosen: MenuOption is null!")
-                )
+                wasmBoy.putByte(Offsets.wBattleMenuCursorPosition, menuOption?.toByte() ?: 0)
             }
             BreakpointManager.Address.ListMoves -> {
                 println("[GameLoopInterceptor]: Listing moves")
                 updateControllerState(ControllerAction.ReleaseAll)
 
+                val monStruct = getCurrentPokemonStruct()
                 val moveNums = wasmBoy.getBytes(Offsets.wListMoves_MoveIndicesBuffer, 4)
+
                 val moveNames = getMoveNames(moveNums)
-                val moves: List<PokemonMove> = moveNames.map {
+                val movePPs = monStruct.slice(23..23 + 3)
+                val moveTypes = moveNums.map {
+                    val moveNum = getMoveStruct(it.toInt())[3]
+                    getMoveStruct(it.toInt()).forEach {
+                        println(it.toUByte())
+                    }
+//                    PokemonType.fromNumber(moveNum.toInt())
+                }
+
+                val moves: List<PokemonMove> = moveNames.mapIndexed { ix, it ->
                     PokemonMove(
                         name = it,
-                        // TODO Read these from memory
-                        pp = MovePP(10, 10),
-                        type = PokemonType.Normal,
+                        pp = MovePP(10, movePPs[ix].toInt()),
+//                        type = moveTypes[ix],
+                        type = PokemonType.Normal
                     )
                 }
                 val actions = List(moves.size) {
@@ -88,7 +95,7 @@ class GameLoopInterceptor(
                 }
 
                 val moveInputs: List<MoveButtonInput> = moves.zip(actions) { move, action ->
-                   MoveButtonInput.Enabled(move, action)
+                    MoveButtonInput.Enabled(move, action)
                 } + List(4 - moveNames.size) { MoveButtonInput.Disabled }
                 updateControllerMode(ControllerMode.MoveSelection(moveInputs))
             }
@@ -96,10 +103,8 @@ class GameLoopInterceptor(
                 println("[GameLoopInterceptor]: Move used")
                 updateControllerState(ControllerAction.ReleaseAll)
                 updateControllerMode(ControllerMode.Dpad)
-                wasmBoy.memory.put(
-                    wasmBoy.getWasmBoyOffsetFromGameBoyOffset(Offsets.wMenuCursorY),
-                    menuOption?.toByte() ?: 0
-                )
+                wasmBoy.putByte(Offsets.wMenuCursorY, menuOption?.toByte() ?: 0)
+                wasmBoy.putByte(Offsets.wCurMoveNum, menuOption?.toByte() ?: 0)
             }
             else -> {}
         }
@@ -118,4 +123,33 @@ class GameLoopInterceptor(
             if (i > 0) allStrings[it.toInt() - 1] else null
         }.filterNotNull()
     }
+
+    private fun getCurrentPokemonStruct(): ByteArray {
+        val currentMon = wasmBoy.getBytes(Offsets.wCurPartyMon, 1)[0]
+        val monLocation = Offsets.wPartyMons + currentMon.toInt() * Offsets.PartyMonStructSize
+        return wasmBoy.getBytes(monLocation, Offsets.PartyMonStructSize)
+    }
+
+    private fun getMoveStruct(moveIndex: Int): ByteArray {
+        val moveOffset = moveIndex * Offsets.MoveStructLength
+        return wasmBoy.getBytesFromBank(
+            Offsets.RomBankMoves,
+            Offsets.MovesTable + moveOffset,
+            Offsets.MoveStructLength
+        )
+    }
+
+    /*
+    MACRO move
+	db \1 ; animation
+	db \2 ; effect
+	db \3 ; power
+	db \4 ; type
+	db \5 percent ; accuracy
+	db \6 ; pp
+	db \7 percent ; effect chance
+	assert \6 <= 40, "PP must be 40 or less"
+ENDM
+
+     */
 }
