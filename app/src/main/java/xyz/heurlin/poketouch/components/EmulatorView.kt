@@ -30,7 +30,7 @@ fun EmulatorView(
     emulatorViewModel: EmulatorViewModel = viewModel()
 ) {
     var emulator by remember { mutableStateOf<Emulator?>(null) }
-    val controllerMode by remember { emulatorViewModel.controllerMode }
+    val controllerMode = emulatorViewModel.controllerMode
 
     BackHandler(enabled = true) {
        emulator?.backPressed = true
@@ -43,6 +43,8 @@ fun EmulatorView(
                 cxt.resources.openRawResource(R.raw.pokecrystal),
                 screen,
                 emulatorViewModel.controllerState,
+                emulatorViewModel::updateControllerMode,
+                emulatorViewModel::updateControllerState,
                 cxt.findActivity()
             ).apply {
                 start()

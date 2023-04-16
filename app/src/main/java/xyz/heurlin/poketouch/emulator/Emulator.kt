@@ -5,9 +5,7 @@ import android.app.Activity
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
-import xyz.heurlin.poketouch.Button
-import xyz.heurlin.poketouch.ControllerState
-import xyz.heurlin.poketouch.DpadDirection
+import xyz.heurlin.poketouch.*
 import xyz.heurlin.poketouch.components.ScreenView
 import java.io.File
 import java.io.FileInputStream
@@ -20,6 +18,8 @@ class Emulator(
     rom: InputStream,
     private val screen: ScreenView,
     private val controllerState: ControllerState,
+    updateControllerMode: (ControllerMode) -> Unit,
+    updateControllerState: (ControllerAction) -> Unit,
     private val activity: Activity
 ) {
     private val wasmBoy: WasmBoy = WasmBoy(ByteBuffer.allocate(20_000_000), null)
@@ -33,7 +33,8 @@ class Emulator(
 
     private lateinit var audio: AudioTrack
 
-    private val interceptor = GameLoopInterceptor(wasmBoy)
+    private val interceptor =
+        GameLoopInterceptor(wasmBoy, updateControllerMode, updateControllerState)
 
     init {
         loadRom(rom)
@@ -191,8 +192,8 @@ class Emulator(
     }
 
     enum class Response(val code: Int) {
-       BREAKPOINT(2),
-       OK(-1)
+        BREAKPOINT(2),
+        OK(-1)
     }
 
     fun start() {
@@ -210,7 +211,7 @@ class Emulator(
 
         thread {
             while (true) {
-                if (wasmBoy.numberOfSamplesInAudioBuffer > 6000) continue;
+                if (wasmBoy.numberOfSamplesInAudioBuffer > 6000) continue
                 if (!running) {
                     Thread.sleep(100)
                     continue

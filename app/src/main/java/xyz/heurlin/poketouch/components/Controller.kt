@@ -16,9 +16,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import xyz.heurlin.poketouch.ControllerAction
 import xyz.heurlin.poketouch.ControllerMode
-import xyz.heurlin.poketouch.types.MovePP
-import xyz.heurlin.poketouch.types.PokemonMove
-import xyz.heurlin.poketouch.types.PokemonType
+import xyz.heurlin.poketouch.exampleData.ExampleMoves
 
 @Composable
 fun Controller(
@@ -35,19 +33,12 @@ fun Controller(
     ) {
 
         when (mode) {
-            ControllerMode.Dpad -> {
+            is ControllerMode.Dpad -> {
                 Dpad(onButtonPressed)
             }
-            ControllerMode.ActionSelection -> Text("Action selection")
-            ControllerMode.MoveSelection -> {
-                MoveSelection(
-                    moves = listOf(
-                        PokemonMove("Tackle", MovePP(10, 10), PokemonType.Normal),
-                        PokemonMove("Razor Leaf", MovePP(10, 10), PokemonType.Grass),
-                        PokemonMove("Dragon Rage", MovePP(10, 10), PokemonType.Dragon),
-                        PokemonMove("Waterfall", MovePP(10, 10), PokemonType.Water),
-                    )
-                )
+            is ControllerMode.ActionSelection -> ActionSelection(actions = mode.actions)
+            is ControllerMode.MoveSelection -> {
+                MoveSelection(moves = mode.moves)
             }
         }
 
@@ -84,14 +75,14 @@ fun SaveStateMenu(
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(onClick = {
-                onClickLoad();
-                expanded = false;
+                onClickLoad()
+                expanded = false
             }) {
                 Text("Load state")
             }
             DropdownMenuItem(onClick = {
-                onClickSave();
-                expanded = false;
+                onClickSave()
+                expanded = false
             }) {
                 Text("Save state")
             }
@@ -100,7 +91,13 @@ fun SaveStateMenu(
 }
 
 class ModeProvider : PreviewParameterProvider<ControllerMode> {
-    override val values: Sequence<ControllerMode> = ControllerMode.values().asSequence()
+    override val values: Sequence<ControllerMode> = sequenceOf(
+        ControllerMode.Dpad,
+        ControllerMode.ActionSelection(actions = listOf()),
+        ControllerMode.MoveSelection(ExampleMoves.moves.map {
+           MoveButtonInput.Enabled(it) {}
+        }),
+    )
 }
 
 @Preview(showSystemUi = false)

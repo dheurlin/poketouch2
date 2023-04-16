@@ -1,6 +1,5 @@
 package xyz.heurlin.poketouch.components
 
-import android.graphics.ColorSpace
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,48 +19,80 @@ import xyz.heurlin.poketouch.types.PokemonMove
 import xyz.heurlin.poketouch.types.PokemonType
 import xyz.heurlin.poketouch.ui.theme.PokeTouch2Theme
 
+sealed class MoveButtonInput {
+    object Disabled : MoveButtonInput()
+    data class Enabled(val move: PokemonMove, val onClick: () -> Unit) : MoveButtonInput()
+}
 
 @Composable
 fun MoveButton(
-   move: PokemonMove,
-   onClick: () -> Unit,
-   modifier: Modifier = Modifier
+    moveInput: MoveButtonInput,
+    modifier: Modifier = Modifier
 ) {
-   Column(
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.SpaceAround,
-      modifier = modifier
-         .clip(RoundedCornerShape(size = 10.dp))
-         .background(color = move.type.color)
-         .background(color = Color(0x22000000))
-         .clickable(onClick = onClick)
-         .padding(15.dp)
-   ) {
+    val color = if (moveInput is MoveButtonInput.Enabled) {
+        moveInput.move.type.color
+    } else {
+        Color(0xFF777777)
+    }
+    val onClick = if (moveInput is MoveButtonInput.Enabled) {
+        moveInput.onClick
+    } else {
+        { }
+    }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceAround,
+        modifier = modifier
+            .clip(RoundedCornerShape(size = 10.dp))
+            .background(color = color)
+            .background(color = Color(0x22000000))
+            .clickable(onClick = onClick)
+            .padding(15.dp)
+    ) {
 
-      Text(
-        text = move.name,
-         style = MaterialTheme.typography.body1
-      )
+        Text(
+            text = if (moveInput is MoveButtonInput.Enabled) moveInput.move.name else "",
+            style = MaterialTheme.typography.body1
+        )
 
-      Row {
-         TypeBadge(type = move.type)
-         Text(
-            text = "PP ${move.pp.current}/${move.pp.total}",
-            style = MaterialTheme.typography.body2,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f)
-         )
-      }
-   }
+        Row {
+            if (moveInput is MoveButtonInput.Enabled) {
+                TypeBadge(type = moveInput.move.type)
+            }
+            val ppStr = if (moveInput is MoveButtonInput.Enabled) {
+                "PP ${moveInput.move.pp.current}/${moveInput.move.pp.total}"
+            } else {
+                ""
+            }
+            Text(
+                text = ppStr,
+                style = MaterialTheme.typography.body2,
+                textAlign = TextAlign.End,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
 }
 
-@Preview()
+@Preview(name = "Enabled button")
 @Composable
 fun PreviewMoveButton() {
-   PokeTouch2Theme {
-      MoveButton(
-         move = PokemonMove("Seismic Toss", MovePP(10, 10), PokemonType.Fighting),
-         onClick = {}
-      )
-   }
+    PokeTouch2Theme {
+        MoveButton(
+            MoveButtonInput.Enabled(
+                move = PokemonMove("Seismic Toss", MovePP(10, 10), PokemonType.Fighting),
+                onClick = {}
+            )
+        )
+    }
+}
+
+@Preview(name = "Disabled button")
+@Composable
+fun PreviewMoveButtonDisabled() {
+    PokeTouch2Theme {
+        MoveButton(
+            MoveButtonInput.Disabled
+        )
+    }
 }

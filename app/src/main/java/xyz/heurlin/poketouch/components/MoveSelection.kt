@@ -6,13 +6,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import xyz.heurlin.poketouch.exampleData.ExampleMoves
 import xyz.heurlin.poketouch.types.MovePP
 import xyz.heurlin.poketouch.types.PokemonMove
 import xyz.heurlin.poketouch.types.PokemonType
 import xyz.heurlin.poketouch.ui.theme.PokeTouch2Theme
 
 @Composable
-fun MoveSelection(moves: List<PokemonMove>) {
+fun MoveSelection(moves: List<MoveButtonInput>) {
     Column() {
         val rowModifier = Modifier.fillMaxWidth()
         val buttonModifier = Modifier
@@ -23,13 +24,11 @@ fun MoveSelection(moves: List<PokemonMove>) {
             modifier = rowModifier
         ) {
             MoveButton(
-                move = moves[0],
-                onClick = { println(moves[0].name) },
+                moves[0],
                 modifier = buttonModifier
             )
             MoveButton(
-                move = moves[1],
-                onClick = { println(moves[1].name) },
+                moves[1],
                 modifier = buttonModifier
             )
         }
@@ -38,13 +37,11 @@ fun MoveSelection(moves: List<PokemonMove>) {
             modifier = rowModifier
         ) {
             MoveButton(
-                move = moves[2],
-                onClick = { println(moves[2].name) },
+                moves[2],
                 modifier = buttonModifier
             )
             MoveButton(
-                move = moves[3],
-                onClick = { println(moves[3].name) },
+                moves[3],
                 modifier = buttonModifier
             )
         }
@@ -56,12 +53,9 @@ fun MoveSelection(moves: List<PokemonMove>) {
 fun PreviewMoveSelection() {
     PokeTouch2Theme {
         MoveSelection(
-            moves = listOf(
-                PokemonMove("Tackle", MovePP(10, 10), PokemonType.Normal),
-                PokemonMove("Razor Leaf", MovePP(10, 10), PokemonType.Grass),
-                PokemonMove("Dragon Rage", MovePP(10, 10), PokemonType.Dragon),
-                PokemonMove("Waterfall", MovePP(10, 10), PokemonType.Water),
-            )
+            moves = ExampleMoves.moves.map {
+                MoveButtonInput.Enabled(it, onClick = {})
+            }
         )
     }
 }
