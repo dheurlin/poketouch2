@@ -22,7 +22,6 @@ class BreakpointManager(private val wasmBoy: WasmBoy) {
         Address.values().associateBy { address -> Pair(address.bank, address.offset) }
 
     private var numUsed = 0
-    private val breakpointsSet = mutableSetOf<Address>()
 
     fun setPCBreakPoint(addr: Address) {
         when (numUsed) {
@@ -38,7 +37,6 @@ class BreakpointManager(private val wasmBoy: WasmBoy) {
             9 -> wasmBoy.setProgramCounterBreakpoint9(addr.offset)
             else -> throw IndexOutOfBoundsException("All breakpoints already used!")
         }
-        breakpointsSet.add(addr)
         numUsed += 1
     }
 
@@ -54,7 +52,6 @@ class BreakpointManager(private val wasmBoy: WasmBoy) {
         wasmBoy.setProgramCounterBreakpoint8(-1)
         wasmBoy.setProgramCounterBreakpoint9(-1)
 
-        breakpointsSet.clear()
         numUsed = 0
     }
 
