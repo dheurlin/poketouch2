@@ -11,8 +11,6 @@ object Offsets {
     const val MoveNames = 0x5f29
     const val MoveNameLength = 13
     const val NumMoves = 251
-    // WasmBoy offsets
-    const val WasmBoySwitchableCartridgeRomLocation = 0x4000
     // ROM banks
     const val RomBankNames = 0x72
 }
