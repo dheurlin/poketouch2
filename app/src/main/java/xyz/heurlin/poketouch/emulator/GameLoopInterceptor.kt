@@ -74,7 +74,6 @@ class GameLoopInterceptor(
 
                 val moveNums = wasmBoy.getBytes(Offsets.wListMoves_MoveIndicesBuffer, 4)
                 val moveNames = getMoveNames(moveNums)
-                val movePPs = monStruct.currentPPs
                 val movesData = moveNums.takeWhile { it != 0.toByte() }.map {
                     getMoveStruct(it.toUByte().toInt())
                 }
@@ -83,7 +82,7 @@ class GameLoopInterceptor(
                     PokemonMove(
                         name = it,
                         // TODO this does not take into account PP Ups, that would require additional calculation
-                        pp = MovePP(total = movesData[ix].basePP, current = movePPs[ix].toInt()),
+                        pp = MovePP(movesData[ix].basePP, monStruct.currentPPs[ix]),
                         type = movesData[ix].type,
                     )
                 }
