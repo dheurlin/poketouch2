@@ -15,7 +15,7 @@ object Offsets {
     const val MoveNameLength = 13
     const val NumMoves = 251
     const val MovesTable = 0x5afb
-    const val MoveStructLength = 6
+    const val MoveStructLength = 7
     // ROM banks
     const val RomBankNames = 0x72
     const val RomBankMoves = 0x10

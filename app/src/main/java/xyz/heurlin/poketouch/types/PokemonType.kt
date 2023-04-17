@@ -12,14 +12,14 @@ enum class PokemonType(val color: Color, val number: Int) {
     Bug(color = PokeTypeBug, number = 7),
     Ghost(color = PokeTypeGhost, number = 8),
     Steel(color = PokeTypeSteel, number = 9),
-    Fire(color = PokeTypeFire, number = 29),
-    Water(color = PokeTypeWater, number = 30),
-    Grass(color = PokeTypeGrass, number = 31),
-    Electric(color = PokeTypeElectric, number = 32),
-    Psychic(color = PokeTypePsychic, number = 33),
-    Ice(color = PokeTypeIce, number = 34),
-    Dragon(color = PokeTypeDragon, number = 35),
-    Dark(color = PokeTypeDark, number = 36);
+    Fire(color = PokeTypeFire, number = 20),
+    Water(color = PokeTypeWater, number = 21),
+    Grass(color = PokeTypeGrass, number = 22),
+    Electric(color = PokeTypeElectric, number = 23),
+    Psychic(color = PokeTypePsychic, number = 24),
+    Ice(color = PokeTypeIce, number = 25),
+    Dragon(color = PokeTypeDragon, number = 26),
+    Dark(color = PokeTypeDark, number = 27);
 
 
     companion object {

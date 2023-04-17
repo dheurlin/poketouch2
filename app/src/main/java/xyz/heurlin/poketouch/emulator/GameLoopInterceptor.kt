@@ -6,9 +6,8 @@ import xyz.heurlin.poketouch.ControllerAction
 import xyz.heurlin.poketouch.ControllerMode
 import xyz.heurlin.poketouch.components.MoveButtonInput
 import xyz.heurlin.poketouch.emulator.wasmboyextensions.*
-import xyz.heurlin.poketouch.types.MovePP
-import xyz.heurlin.poketouch.types.PokemonMove
-import xyz.heurlin.poketouch.types.PokemonType
+import xyz.heurlin.poketouch.types.*
+import kotlin.math.max
 
 class GameLoopInterceptor(
     private val wasmBoy: WasmBoy,
@@ -23,6 +22,7 @@ class GameLoopInterceptor(
 
     fun intercept() {
         when (breakMan.hitBreakPoint()) {
+
             BreakpointManager.Address.StartBattle -> {
                 println("[GameLoopInterceptor]: Battle starting!")
                 breakMan.run {
@@ -34,6 +34,7 @@ class GameLoopInterceptor(
                     setPCBreakPoint(BreakpointManager.Address.MoveSelectionScreen_use_move_not_b)
                 }
             }
+
             BreakpointManager.Address.ExitBattle -> {
                 println("[GameLoopInterceptor]: Exiting battle")
                 breakMan.run {
@@ -41,6 +42,7 @@ class GameLoopInterceptor(
                     setPCBreakPoint(BreakpointManager.Address.StartBattle)
                 }
             }
+
             BreakpointManager.Address.BattleMenu -> {
                 println("[GameLoopInterceptor]: Opening battle menu")
                 updateControllerState(ControllerAction.ReleaseAll)
@@ -52,6 +54,7 @@ class GameLoopInterceptor(
                 }
                 updateControllerMode(ControllerMode.ActionSelection(actions))
             }
+
             BreakpointManager.Address.BattleMenu_next -> {
                 println("[GameLoopInterceptor]: Action chosen")
 
@@ -62,43 +65,42 @@ class GameLoopInterceptor(
 
                 wasmBoy.putByte(Offsets.wBattleMenuCursorPosition, menuOption?.toByte() ?: 0)
             }
+
             BreakpointManager.Address.ListMoves -> {
                 println("[GameLoopInterceptor]: Listing moves")
                 updateControllerState(ControllerAction.ReleaseAll)
 
                 val monStruct = getCurrentPokemonStruct()
-                val moveNums = wasmBoy.getBytes(Offsets.wListMoves_MoveIndicesBuffer, 4)
 
+                val moveNums = wasmBoy.getBytes(Offsets.wListMoves_MoveIndicesBuffer, 4)
                 val moveNames = getMoveNames(moveNums)
-                val movePPs = monStruct.slice(23..23 + 3)
-                val moveTypes = moveNums.map {
-                    val moveNum = getMoveStruct(it.toInt())[3]
-                    getMoveStruct(it.toInt()).forEach {
-                        println(it.toUByte())
-                    }
-//                    PokemonType.fromNumber(moveNum.toInt())
+                val movePPs = monStruct.currentPPs
+                val movesData = moveNums.takeWhile { it != 0.toByte() }.map {
+                    getMoveStruct(it.toUByte().toInt())
                 }
 
                 val moves: List<PokemonMove> = moveNames.mapIndexed { ix, it ->
                     PokemonMove(
                         name = it,
-                        pp = MovePP(10, movePPs[ix].toInt()),
-//                        type = moveTypes[ix],
-                        type = PokemonType.Normal
+                        // TODO this does not take into account PP Ups, that would require additional calculation
+                        pp = MovePP(total = movesData[ix].basePP, current = movePPs[ix].toInt()),
+                        type = movesData[ix].type,
                     )
                 }
-                val actions = List(moves.size) {
-                    {
-                        menuOption = it
-                        updateControllerState(ControllerAction.ButtonPress(Button.A))
-                    }
-                }
+                val actions = List(moves.size) { {
+                    menuOption = it
+                    updateControllerState(ControllerAction.ButtonPress(Button.A))
+                } }
 
                 val moveInputs: List<MoveButtonInput> = moves.zip(actions) { move, action ->
                     MoveButtonInput.Enabled(move, action)
-                } + List(4 - moveNames.size) { MoveButtonInput.Disabled }
+                } + List(4 - moveNames.size) {
+                    MoveButtonInput.Disabled
+                }
+
                 updateControllerMode(ControllerMode.MoveSelection(moveInputs))
             }
+
             BreakpointManager.Address.MoveSelectionScreen_use_move_not_b -> {
                 println("[GameLoopInterceptor]: Move used")
                 updateControllerState(ControllerAction.ReleaseAll)
@@ -106,6 +108,7 @@ class GameLoopInterceptor(
                 wasmBoy.putByte(Offsets.wMenuCursorY, menuOption?.toByte() ?: 0)
                 wasmBoy.putByte(Offsets.wCurMoveNum, menuOption?.toByte() ?: 0)
             }
+
             else -> {}
         }
     }
@@ -124,32 +127,24 @@ class GameLoopInterceptor(
         }.filterNotNull()
     }
 
-    private fun getCurrentPokemonStruct(): ByteArray {
+    private fun getCurrentPokemonStruct(): PartyMonStruct {
         val currentMon = wasmBoy.getBytes(Offsets.wCurPartyMon, 1)[0]
         val monLocation = Offsets.wPartyMons + currentMon.toInt() * Offsets.PartyMonStructSize
-        return wasmBoy.getBytes(monLocation, Offsets.PartyMonStructSize)
+        val bytes = wasmBoy.getBytes(monLocation, Offsets.PartyMonStructSize)
+
+        return PartyMonStruct(bytes)
     }
 
-    private fun getMoveStruct(moveIndex: Int): ByteArray {
-        val moveOffset = moveIndex * Offsets.MoveStructLength
-        return wasmBoy.getBytesFromBank(
+    private fun getMoveStruct(moveIndex: Int): MoveStruct {
+        val index = max(0, moveIndex - 1)
+        val moveOffset = index * Offsets.MoveStructLength
+        val bytes = wasmBoy.getBytesFromBank(
             Offsets.RomBankMoves,
             Offsets.MovesTable + moveOffset,
             Offsets.MoveStructLength
         )
+
+        return MoveStruct(bytes)
     }
 
-    /*
-    MACRO move
-	db \1 ; animation
-	db \2 ; effect
-	db \3 ; power
-	db \4 ; type
-	db \5 percent ; accuracy
-	db \6 ; pp
-	db \7 percent ; effect chance
-	assert \6 <= 40, "PP must be 40 or less"
-ENDM
-
-     */
 }
