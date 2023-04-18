@@ -18,10 +18,20 @@ import xyz.heurlin.poketouch.types.MovePP
 import xyz.heurlin.poketouch.types.PokemonMove
 import xyz.heurlin.poketouch.types.PokemonType
 import xyz.heurlin.poketouch.ui.theme.PokeTouch2Theme
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 
 sealed class MoveButtonInput {
     object Disabled : MoveButtonInput()
     data class Enabled(val move: PokemonMove, val onClick: () -> Unit) : MoveButtonInput()
+
+    @OptIn(ExperimentalContracts::class)
+    fun isEnabled(): Boolean {
+        contract {
+            returns(true) implies (this@MoveButtonInput is Enabled)
+        }
+        return this is Enabled
+    }
 }
 
 @Composable
@@ -29,16 +39,14 @@ fun MoveButton(
     moveInput: MoveButtonInput,
     modifier: Modifier = Modifier
 ) {
-    val color = if (moveInput is MoveButtonInput.Enabled) {
-        moveInput.move.type.color
-    } else {
-        Color(0xFF777777)
-    }
-    val onClick = if (moveInput is MoveButtonInput.Enabled) {
-        moveInput.onClick
-    } else {
-        { }
-    }
+    val color = if (moveInput.isEnabled()) moveInput.move.type.color else Color(0xFF777777)
+
+    val clickModifier: Modifier.() -> Modifier = if(moveInput.isEnabled()) { {
+        this.clickable(onClick = moveInput.onClick)
+    } } else { {
+        this
+    } }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceAround,
@@ -46,20 +54,20 @@ fun MoveButton(
             .clip(RoundedCornerShape(size = 10.dp))
             .background(color = color)
             .background(color = Color(0x22000000))
-            .clickable(onClick = onClick)
+            .clickModifier()
             .padding(15.dp)
     ) {
 
         Text(
-            text = if (moveInput is MoveButtonInput.Enabled) moveInput.move.name else "",
+            text = if (moveInput.isEnabled()) moveInput.move.name else "",
             style = MaterialTheme.typography.body1
         )
 
         Row {
-            if (moveInput is MoveButtonInput.Enabled) {
+            if (moveInput.isEnabled()) {
                 TypeBadge(type = moveInput.move.type)
             }
-            val ppStr = if (moveInput is MoveButtonInput.Enabled) {
+            val ppStr = if (moveInput.isEnabled()) {
                 "PP ${moveInput.move.pp.current}/${moveInput.move.pp.total}"
             } else {
                 ""
