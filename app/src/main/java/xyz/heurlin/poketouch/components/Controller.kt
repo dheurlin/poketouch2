@@ -14,13 +14,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import xyz.heurlin.poketouch.Button.*
 import xyz.heurlin.poketouch.ControllerAction
 import xyz.heurlin.poketouch.ControllerMode
+import xyz.heurlin.poketouch.ControllerState
 import xyz.heurlin.poketouch.exampleData.ExampleMoves
 
 @Composable
 fun Controller(
     mode: ControllerMode,
+    updateControllerMode: (mode: ControllerMode) -> Unit,
     onButtonPressed: (ControllerAction) -> Unit,
     onClickSave: () -> Unit,
     onClickLoad: () -> Unit,
@@ -52,7 +55,9 @@ fun Controller(
         SaveStateMenu(
             onClickSave = onClickSave,
             onClickLoad = onClickLoad,
-            modifier = Modifier.weight(1f, false)
+            modifier = Modifier.weight(1f, false),
+            showDpad = { updateControllerMode(ControllerMode.Dpad()) },
+            updateControllerState = onButtonPressed,
         )
     }
 }
@@ -61,6 +66,8 @@ fun Controller(
 fun SaveStateMenu(
     onClickSave: () -> Unit,
     onClickLoad: () -> Unit,
+    showDpad: () -> Unit,
+    updateControllerState: (action: ControllerAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -75,7 +82,7 @@ fun SaveStateMenu(
         ) {
             Icon(
                 Icons.Filled.List,
-                contentDescription = "Save states"
+                contentDescription = "Dropdown menu, allowing management of save states and other stuff"
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -90,6 +97,24 @@ fun SaveStateMenu(
                 expanded = false
             }) {
                 Text("Save state")
+            }
+            DropdownMenuItem(onClick = {
+                updateControllerState(ControllerAction.ButtonPress(Start))
+                expanded = false
+            }) {
+                Text("Start")
+            }
+            DropdownMenuItem(onClick = {
+                updateControllerState(ControllerAction.ButtonPress(Select))
+                expanded = false
+            }) {
+                Text("Select")
+            }
+            DropdownMenuItem(onClick = {
+                showDpad()
+                expanded = false
+            }) {
+                Text("Return to D-pad")
             }
         }
     }
@@ -110,5 +135,5 @@ class ModeProvider : PreviewParameterProvider<ControllerMode> {
 fun PreviewController(
     @PreviewParameter(ModeProvider::class) mode: ControllerMode
 ) {
-    Controller(mode, { }, { }, { }, { })
+    Controller(mode, { }, { }, { }, { }, { })
 }
