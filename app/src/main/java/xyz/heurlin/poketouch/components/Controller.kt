@@ -24,6 +24,7 @@ fun Controller(
     onButtonPressed: (ControllerAction) -> Unit,
     onClickSave: () -> Unit,
     onClickLoad: () -> Unit,
+    stopDPadRotation: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -34,7 +35,11 @@ fun Controller(
 
         when (mode) {
             is ControllerMode.Dpad -> {
-                Dpad(onButtonPressed)
+                Dpad(
+                    onButtonPressed = onButtonPressed,
+                    shouldRotate = mode.shouldRotate,
+                    stopRotation = stopDPadRotation,
+                )
             }
             is ControllerMode.ActionSelection -> ActionSelection(actions = mode.actions)
             is ControllerMode.MoveSelection -> {
@@ -92,10 +97,10 @@ fun SaveStateMenu(
 
 class ModeProvider : PreviewParameterProvider<ControllerMode> {
     override val values: Sequence<ControllerMode> = sequenceOf(
-        ControllerMode.Dpad,
+        ControllerMode.Dpad(),
         ControllerMode.ActionSelection(actions = listOf()),
         ControllerMode.MoveSelection(ExampleMoves.moves.map {
-           MoveButtonInput.Enabled(it) {}
+            MoveButtonInput.Enabled(it) {}
         }),
     )
 }
@@ -105,5 +110,5 @@ class ModeProvider : PreviewParameterProvider<ControllerMode> {
 fun PreviewController(
     @PreviewParameter(ModeProvider::class) mode: ControllerMode
 ) {
-    Controller(mode, { }, { }, { })
+    Controller(mode, { }, { }, { }, { })
 }

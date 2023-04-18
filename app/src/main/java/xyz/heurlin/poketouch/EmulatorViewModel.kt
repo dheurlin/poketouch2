@@ -8,7 +8,7 @@ import xyz.heurlin.poketouch.components.MoveButtonInput
 import xyz.heurlin.poketouch.types.PokemonMove
 
 sealed class ControllerMode {
-    object Dpad : ControllerMode()
+    data class Dpad(val shouldRotate: Boolean = false) : ControllerMode()
     data class ActionSelection(val actions: List<() -> Unit>): ControllerMode()
     data class MoveSelection(val moves: List<MoveButtonInput>) :
         ControllerMode()
@@ -46,7 +46,7 @@ sealed class ControllerAction {
 
 class EmulatorViewModel : ViewModel() {
     val controllerState = ControllerState()
-    var controllerMode by mutableStateOf<ControllerMode>(ControllerMode.Dpad)
+    var controllerMode by mutableStateOf<ControllerMode>(ControllerMode.Dpad())
         private set
 
     fun updateControllerState(action: ControllerAction) {
@@ -68,5 +68,13 @@ class EmulatorViewModel : ViewModel() {
 
     fun updateControllerMode(mode: ControllerMode) {
         controllerMode = mode
+    }
+
+    fun startControllerRotation() {
+        controllerMode = ControllerMode.Dpad(true)
+    }
+
+    fun stopControllerRotation() {
+        controllerMode = ControllerMode.Dpad(false)
     }
 }

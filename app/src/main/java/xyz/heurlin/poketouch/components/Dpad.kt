@@ -1,6 +1,7 @@
 package xyz.heurlin.poketouch.components
 
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -16,10 +17,12 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,7 +43,10 @@ val lightColor = Color(0xFFD8D8D8)
 
 @Composable
 fun Dpad(
-    onButtonPressed: (ControllerAction) -> Unit, modifier: Modifier = Modifier
+    onButtonPressed: (ControllerAction) -> Unit,
+    shouldRotate: Boolean,
+    stopRotation: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
         contentAlignment = Alignment.Center,
@@ -52,6 +58,8 @@ fun Dpad(
     ) {
         BallSurface(
             size = RADIUS,
+            shouldRotate,
+            stopRotation,
             onDirectionChange = { onButtonPressed(ControllerAction.DpadPress(it)) },
         )
         AButton(
@@ -66,10 +74,11 @@ fun Dpad(
 @Composable
 fun BallSurface(
     size: Dp,
+    shouldRotate: Boolean,
+    stopRotation: () -> Unit,
     onDirectionChange: (DpadDirection?) -> Unit,
 ) {
     var viewSize by remember { mutableStateOf(IntSize.Zero) }
-//    var touching by remember { mutableStateOf(false) }
 
     fun getDirection(touchPosition: Offset): DpadDirection {
         val xCentered = touchPosition.x - (viewSize.width / 2)
@@ -82,6 +91,18 @@ fun BallSurface(
             else -> DpadDirection.Left
         }
     }
+
+    val rotation by animateFloatAsState(
+        targetValue = if (shouldRotate) 6 * 360f else 0f,
+        animationSpec = tween(
+            durationMillis = 3000,
+            easing = FastOutSlowInEasing,
+        ),
+        finishedListener = {
+            stopRotation()
+            println("Rotation finished!")
+        }
+    )
 
     Surface(
         color = Color.Transparent,
@@ -111,6 +132,7 @@ fun BallSurface(
                     onDirectionChange(getDirection(change.position))
                 }
             }
+            .then( if (shouldRotate) Modifier.rotate(rotation) else Modifier)
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -215,7 +237,11 @@ fun CoolShape(shape: Shape, color: Color, size: Dp) {
 fun PreviewDpad() {
     PokeTouch2Theme {
         Surface {
-            Dpad(onButtonPressed = {})
+            Dpad(
+                onButtonPressed = {},
+                shouldRotate = false,
+                stopRotation = {}
+            )
         }
     }
 }

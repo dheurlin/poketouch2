@@ -55,7 +55,8 @@ fun EmulatorView(
             mode = controllerMode,
             onButtonPressed =  emulatorViewModel::updateControllerState,
             onClickLoad = { emulator?.loadState() },
-            onClickSave = { emulator?.saveState() }
+            onClickSave = { emulator?.saveState() },
+            stopDPadRotation = emulatorViewModel::stopControllerRotation
         )
     }
 }

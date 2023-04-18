@@ -4,6 +4,7 @@ import WasmBoy
 import xyz.heurlin.poketouch.Button
 import xyz.heurlin.poketouch.ControllerAction
 import xyz.heurlin.poketouch.ControllerMode
+import xyz.heurlin.poketouch.ControllerState
 import xyz.heurlin.poketouch.components.MoveButtonInput
 import xyz.heurlin.poketouch.emulator.wasmboyextensions.*
 import xyz.heurlin.poketouch.types.*
@@ -25,6 +26,7 @@ class GameLoopInterceptor(
 
             BreakpointManager.Address.StartBattle -> {
                 println("[GameLoopInterceptor]: Battle starting!")
+                updateControllerMode(ControllerMode.Dpad(shouldRotate = true))
                 breakMan.run {
                     clearPCBreakPoints()
                     setPCBreakPoint(BreakpointManager.Address.ExitBattle)
@@ -49,6 +51,7 @@ class GameLoopInterceptor(
                 val actions = List(4) { ix ->
                     {
                         menuOption = ix + 1
+                        updateControllerState(ControllerAction.ReleaseAll)
                         updateControllerState(ControllerAction.ButtonPress(Button.A))
                     }
                 }
@@ -60,7 +63,7 @@ class GameLoopInterceptor(
 
                 // Unless we chose "fight"
                 if (menuOption != 1) {
-                    updateControllerMode(ControllerMode.Dpad)
+                    updateControllerMode(ControllerMode.Dpad())
                 }
 
                 wasmBoy.putByte(Offsets.wBattleMenuCursorPosition, menuOption?.toByte() ?: 0)
@@ -88,6 +91,7 @@ class GameLoopInterceptor(
                 }
                 val actions = List(moves.size) { {
                     menuOption = it
+                    updateControllerState(ControllerAction.ReleaseAll)
                     updateControllerState(ControllerAction.ButtonPress(Button.A))
                 } }
 
@@ -103,7 +107,7 @@ class GameLoopInterceptor(
             BreakpointManager.Address.MoveSelectionScreen_use_move_not_b -> {
                 println("[GameLoopInterceptor]: Move used")
                 updateControllerState(ControllerAction.ReleaseAll)
-                updateControllerMode(ControllerMode.Dpad)
+                updateControllerMode(ControllerMode.Dpad())
                 wasmBoy.putByte(Offsets.wMenuCursorY, menuOption?.toByte() ?: 0)
                 wasmBoy.putByte(Offsets.wCurMoveNum, menuOption?.toByte() ?: 0)
             }
