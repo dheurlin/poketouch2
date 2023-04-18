@@ -1,13 +1,18 @@
 package xyz.heurlin.poketouch.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material.Button
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import xyz.heurlin.poketouch.ControllerMode
+import androidx.compose.ui.unit.dp
+import xyz.heurlin.poketouch.ui.theme.PokeTypeFighting
+import xyz.heurlin.poketouch.ui.theme.PokeTypeGrass
+import xyz.heurlin.poketouch.ui.theme.PokeTypeGround
+import xyz.heurlin.poketouch.ui.theme.PokeTypeWater
 
 @Composable
 fun ActionSelection(actions: List<() -> Unit>, modifier: Modifier = Modifier) {
@@ -15,23 +20,65 @@ fun ActionSelection(actions: List<() -> Unit>, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.SpaceAround,
         modifier = modifier,
     ) {
-        Button(onClick = actions[0]) {
-            Text("Fight")
+        Box(Modifier.padding(30.dp)) {
+            PokeButton(
+                baseColor = PokeTypeFighting,
+                onClick = actions[0],
+                modifier = Modifier
+                    .padding(vertical = 55.dp)
+                    .fillMaxWidth()
+            ) {
+                ContentText("FIGHT")
+            }
         }
-        Button(onClick = actions[1]) {
-            Text("Pokémon")
-        }
-        Button(onClick = actions[2]) {
-            Text("Pack")
-        }
-        Button(onClick = actions[3]) {
-            Text("Run")
+
+        val smallBtnModifier = Modifier
+            .padding(vertical = 25.dp)
+            .weight(1f)
+
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            PokeButton(
+                baseColor = PokeTypeGround,
+                onClick = actions[2],
+                modifier = smallBtnModifier
+            ) {
+                ContentText("BAG")
+            }
+            Spacer(Modifier.width(4.dp))
+            PokeButton(
+                baseColor = PokeTypeWater,
+                onClick = actions[3],
+                modifier = smallBtnModifier
+            ) {
+                ContentText("RUN")
+            }
+            Spacer(Modifier.width(4.dp))
+            PokeButton(
+                baseColor = PokeTypeGrass,
+                onClick = actions[1],
+                modifier = smallBtnModifier
+            ) {
+                ContentText("POKéMON")
+            }
         }
     }
 }
 
-@Preview
+@Composable
+private fun ContentText(text: String) {
+    Text(
+        text = text,
+        fontSize = MaterialTheme.typography.body1.fontSize,
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+@Preview(showSystemUi = true)
 @Composable
 fun PreviewActionSelection() {
-    ActionSelection(actions = listOf())
+    ActionSelection(actions = listOf({}, {}, {}, {}))
 }
