@@ -57,7 +57,8 @@ fun EmulatorView(
             onClickLoad = { emulator?.loadState() },
             onClickSave = { emulator?.saveState() },
             stopDPadRotation = emulatorViewModel::stopControllerRotation,
-            updateControllerMode = emulatorViewModel::updateControllerMode
+            updateControllerMode = emulatorViewModel::updateControllerMode,
+            setTurboSpeed = { speed -> emulator?.let{ it.turboSpeed = speed }  }
         )
     }
 }

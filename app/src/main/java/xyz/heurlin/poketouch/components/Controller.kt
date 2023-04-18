@@ -28,6 +28,7 @@ fun Controller(
     onClickSave: () -> Unit,
     onClickLoad: () -> Unit,
     stopDPadRotation: () -> Unit,
+    setTurboSpeed: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -58,6 +59,7 @@ fun Controller(
             modifier = Modifier.weight(1f, false),
             showDpad = { updateControllerMode(ControllerMode.Dpad()) },
             updateControllerState = onButtonPressed,
+            setTurboSpeed = setTurboSpeed,
         )
     }
 }
@@ -68,9 +70,12 @@ fun SaveStateMenu(
     onClickLoad: () -> Unit,
     showDpad: () -> Unit,
     updateControllerState: (action: ControllerAction) -> Unit,
+    setTurboSpeed: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var isTurbo by remember { mutableStateOf(false) }
+
     Row(
         modifier
             .fillMaxWidth()
@@ -87,18 +92,6 @@ fun SaveStateMenu(
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(onClick = {
-                onClickLoad()
-                expanded = false
-            }) {
-                Text("Load state")
-            }
-            DropdownMenuItem(onClick = {
-                onClickSave()
-                expanded = false
-            }) {
-                Text("Save state")
-            }
-            DropdownMenuItem(onClick = {
                 updateControllerState(ControllerAction.ButtonPress(Start))
                 expanded = false
             }) {
@@ -109,6 +102,24 @@ fun SaveStateMenu(
                 expanded = false
             }) {
                 Text("Select")
+            }
+            DropdownMenuItem(onClick = {
+                isTurbo = (!isTurbo).also { setTurboSpeed(it) }
+                expanded = false
+            }) {
+                Text(if (isTurbo) "Slow" else "Fast")
+            }
+            DropdownMenuItem(onClick = {
+                onClickLoad()
+                expanded = false
+            }) {
+                Text("Load state")
+            }
+            DropdownMenuItem(onClick = {
+                onClickSave()
+                expanded = false
+            }) {
+                Text("Save state")
             }
             DropdownMenuItem(onClick = {
                 showDpad()
@@ -135,5 +146,5 @@ class ModeProvider : PreviewParameterProvider<ControllerMode> {
 fun PreviewController(
     @PreviewParameter(ModeProvider::class) mode: ControllerMode
 ) {
-    Controller(mode, { }, { }, { }, { }, { })
+    Controller(mode, { }, { }, { }, { }, { }, { })
 }

@@ -30,6 +30,7 @@ class Emulator(
     private var shouldLoadState = false
     private var shouldSaveState = false
     var backPressed = false
+    var turboSpeed = false
 
     private lateinit var audio: AudioTrack
 
@@ -89,6 +90,10 @@ class Emulator(
         wasmBoy.memory.position(wasmBoy.audiO_BUFFER_LOCATION)
         wasmBoy.memory.get(audioArray)
         audio.write(audioArray, 0, audioBufLen)
+        skipAudio()
+    }
+
+    private fun skipAudio() {
         wasmBoy.clearAudioBuffer()
     }
 
@@ -227,15 +232,20 @@ class Emulator(
                 }
                 if (response > Response.OK.code) {
                     screen.getPixelsFromEmulator(wasmBoy)
-                    playAudio()
+                    when (turboSpeed) {
+                        false -> playAudio()
+                        true -> skipAudio()
+                    }
                     setJoypadInput()
                 } else {
                     println("[EMULATOR Main loop] Invalid response received: $response")
                 }
 
-                // Sleep a bit depending on how full the audio buffer is
-                val audioBufFill = audioBufLen.toFloat() / AUDIO_BUF_TARGET_SIZE.toFloat()
-                Thread.sleep(((1000 / 60) * audioBufFill).toLong())
+                if (!turboSpeed) {
+                    // Sleep a bit depending on how full the audio buffer is
+                    val audioBufFill = audioBufLen.toFloat() / AUDIO_BUF_TARGET_SIZE.toFloat()
+                    Thread.sleep(((1000 / 60) * audioBufFill).toLong())
+                }
             }
         }
     }
