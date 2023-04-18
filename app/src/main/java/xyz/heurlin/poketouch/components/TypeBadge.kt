@@ -19,7 +19,7 @@ fun TypeBadge(type: PokemonType, modifier: Modifier = Modifier) {
         Text(
             text = type.name.uppercase(),
             color = Color.White,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             modifier = modifier
                 .border(width = 1.dp, color = Color.White)
                 .background(type.color)

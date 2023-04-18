@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -41,48 +42,46 @@ fun MoveButton(
     modifier: Modifier = Modifier
 ) {
     val color = if (moveInput.isEnabled()) {
-        moveInput.move.type.color.darken(.15f)
-    }
-    else {
+        moveInput.move.type.color
+    } else {
         Color(0xFF777777)
     }
 
-    val clickModifier: Modifier.() -> Modifier = if(moveInput.isEnabled()) { {
-        this.clickable(onClick = moveInput.onClick)
-    } } else { {
-        this
-    } }
+    val moveName = if (moveInput.isEnabled()) moveInput.move.name else ""
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceAround,
+    PokeButton(
+        baseColor = color,
+        onClick = if (moveInput.isEnabled()) moveInput.onClick else null,
         modifier = modifier
-            .clip(RoundedCornerShape(size = 10.dp))
-            .background(color)
-            .clickModifier()
-            .padding(15.dp)
+            .padding(top = 30.dp, bottom = 15.dp, start = 15.dp, end = 15.dp)
     ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceAround,
+        ) {
 
-        Text(
-            text = if (moveInput.isEnabled()) moveInput.move.name else "",
-            style = MaterialTheme.typography.body1
-        )
-
-        Row {
-            if (moveInput.isEnabled()) {
-                TypeBadge(type = moveInput.move.type)
-            }
-            val ppStr = if (moveInput.isEnabled()) {
-                "PP ${moveInput.move.pp.current}/${moveInput.move.pp.total}"
-            } else {
-                ""
-            }
             Text(
-                text = ppStr,
-                style = MaterialTheme.typography.body2,
-                textAlign = TextAlign.End,
-                modifier = Modifier.weight(1f)
+                text = moveName.uppercase(),
+                fontSize = MaterialTheme.typography.body1.fontSize,
+                fontWeight = FontWeight.Bold
             )
+            
+            Spacer(modifier = Modifier.height(13.dp))
+
+            Row(
+                verticalAlignment = Alignment.Top
+            ) {
+                if (moveInput.isEnabled()) {
+                    TypeBadge(type = moveInput.move.type)
+                }
+                val ppStr = if (moveInput.isEnabled()) moveInput.move.pp.toString() else ""
+                Text(
+                    text = ppStr,
+                    fontSize = MaterialTheme.typography.body2.fontSize,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }

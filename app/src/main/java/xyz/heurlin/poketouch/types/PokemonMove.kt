@@ -1,4 +1,8 @@
 package xyz.heurlin.poketouch.types
 
 data class PokemonMove(val name: String, val pp: MovePP, val type: PokemonType)
-data class MovePP(val total: Int, val current: Int)
+data class MovePP(val total: Int, val current: Int) {
+    override fun toString(): String {
+        return "PP $current/$total"
+    }
+}
