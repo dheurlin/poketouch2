@@ -66,7 +66,9 @@ class GameLoopInterceptor(
                     updateControllerMode(ControllerMode.Dpad())
                 }
 
-                wasmBoy.putByte(Offsets.wBattleMenuCursorPosition, menuOption?.toByte() ?: 0)
+                menuOption?.let {
+                    wasmBoy.putByte(Offsets.wBattleMenuCursorPosition, it.toByte())
+                }
             }
 
             BreakpointManager.Address.ListMoves -> {
@@ -108,8 +110,10 @@ class GameLoopInterceptor(
                 println("[GameLoopInterceptor]: Move used")
                 updateControllerState(ControllerAction.ReleaseAll)
                 updateControllerMode(ControllerMode.Dpad())
-                wasmBoy.putByte(Offsets.wMenuCursorY, menuOption?.toByte() ?: 0)
-                wasmBoy.putByte(Offsets.wCurMoveNum, menuOption?.toByte() ?: 0)
+                menuOption?.let {
+                    wasmBoy.putByte(Offsets.wMenuCursorY, it.toByte())
+                    wasmBoy.putByte(Offsets.wCurMoveNum, it.toByte())
+                }
             }
 
             else -> {}
