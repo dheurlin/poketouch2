@@ -129,8 +129,8 @@ class GameLoopInterceptor(
 
         val allStrings = Charmap.bytesToString(bytes).split("@")
         return bs.map {
-            val i = it.toInt()
-            if (i > 0) allStrings[it.toInt() - 1] else null
+            val i = it.toUByte().toInt()
+            if (i > 0) allStrings[i - 1] else null
         }.filterNotNull()
     }
 
