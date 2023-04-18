@@ -18,6 +18,7 @@ import xyz.heurlin.poketouch.types.MovePP
 import xyz.heurlin.poketouch.types.PokemonMove
 import xyz.heurlin.poketouch.types.PokemonType
 import xyz.heurlin.poketouch.ui.theme.PokeTouch2Theme
+import xyz.heurlin.poketouch.util.colors.*
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
@@ -39,7 +40,12 @@ fun MoveButton(
     moveInput: MoveButtonInput,
     modifier: Modifier = Modifier
 ) {
-    val color = if (moveInput.isEnabled()) moveInput.move.type.color else Color(0xFF777777)
+    val color = if (moveInput.isEnabled()) {
+        moveInput.move.type.color.darken(.15f)
+    }
+    else {
+        Color(0xFF777777)
+    }
 
     val clickModifier: Modifier.() -> Modifier = if(moveInput.isEnabled()) { {
         this.clickable(onClick = moveInput.onClick)
@@ -52,8 +58,7 @@ fun MoveButton(
         verticalArrangement = Arrangement.SpaceAround,
         modifier = modifier
             .clip(RoundedCornerShape(size = 10.dp))
-            .background(color = color)
-            .background(color = Color(0x22000000))
+            .background(color)
             .clickModifier()
             .padding(15.dp)
     ) {
