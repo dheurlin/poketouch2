@@ -19,9 +19,20 @@ import xyz.heurlin.poketouch.types.PokemonType
 import xyz.heurlin.poketouch.ui.theme.PokeTouch2Theme
 
 class MainActivity : ComponentActivity() {
+    external fun helloWorld(): String
+    external fun retroAPIVersion(): Int
+    external fun retroLibraryName(): String
+    companion object {
+        init {
+            System.loadLibrary("poketouch")
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        println("[C++ bridge] ${helloWorld()}")
+        println("[C++ bridge] Retro API version: ${retroAPIVersion()}")
+        println("[C++ bridge] Retro library name: ${retroLibraryName()}")
         setContent {
             PokeTouch2Theme {
                 Surface(
