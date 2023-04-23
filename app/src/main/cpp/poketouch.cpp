@@ -1,4 +1,7 @@
 #include <jni.h>
+#include <android/log.h>
+#include <stdio.h>
+#include <string.h>
 #include "headers/libretro.h"
 
 // Write C++ code here.
@@ -18,12 +21,145 @@
 //         System.loadLibrary("poketouch")
 //      }
 //    }
-extern "C"
-JNIEXPORT jstring JNICALL
-Java_xyz_heurlin_poketouch_MainActivity_helloWorld(JNIEnv *env, jobject thiz) {
-    jstring jstr = (*env).NewStringUTF("Hello, world!");
-    return jstr;
+
+#define ROM_START      0x0000
+#define ZEROPAGE_START 0xFF80
+#define WRAM_START     0xC000
+#define WRAM_PAGE_SIZE 0x1000
+#define ROM_PAGE_SIZE  0x4000
+
+
+unsigned char *zeropage_ptr = nullptr;
+unsigned char *wram_ptr = nullptr;
+unsigned char *rom_ptr = nullptr;
+
+void set_memory_map_pointers(struct retro_memory_map *desc) {
+    int i;
+    for (i = 0; i < desc->num_descriptors; i++) {
+        switch (desc->descriptors[i].start) {
+            case ZEROPAGE_START:
+                zeropage_ptr = static_cast<unsigned char *>(desc->descriptors[i].ptr);
+                break;
+            case WRAM_START:
+                wram_ptr = static_cast<unsigned char *>(desc->descriptors[i].ptr);
+                break;
+            case ROM_START:
+                rom_ptr = static_cast<unsigned char *>(desc->descriptors[i].ptr);
+                break;
+        }
+    }
 }
+
+static void core_log(enum retro_log_level level, const char *fmt, ...) {
+    char buffer[4096] = {0};
+    static const enum android_LogPriority level_android[] = {
+            ANDROID_LOG_DEBUG,
+            ANDROID_LOG_INFO,
+            ANDROID_LOG_WARN,
+            ANDROID_LOG_ERROR
+    };
+    va_list va;
+
+    va_start(va, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, va);
+    va_end(va);
+
+    if (level == 0)
+        return;
+
+    __android_log_write(level_android[level], "Gambatte Core", buffer);
+}
+
+static bool core_environment(unsigned cmd, void *data) {
+    bool *bval;
+
+    switch (cmd) {
+        case RETRO_ENVIRONMENT_GET_LOG_INTERFACE: {
+            auto *cb = (struct retro_log_callback *) data;
+            cb->log = core_log;
+            break;
+        }
+        case RETRO_ENVIRONMENT_GET_CAN_DUPE:
+            bval = (bool *) data;
+            *bval = true;
+            break;
+        case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
+        case RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY:
+            *(const char **) data = ".";
+            return true;
+
+        case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT:
+            return true;
+
+        case RETRO_ENVIRONMENT_SET_MEMORY_MAPS: {
+            auto *desc = (retro_memory_map *) data;
+            set_memory_map_pointers(desc);
+            return true;
+        }
+
+        default:
+            core_log(RETRO_LOG_DEBUG, "Unhandled env #%u", cmd);
+            return false;
+    }
+
+    return true;
+}
+
+static void core_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch) {
+    // TODO Implement
+    return;
+}
+static void core_input_poll() {
+    // TODO Implement
+}
+
+static int16_t core_input_state(unsigned port, unsigned device, unsigned index, unsigned id) {
+}
+
+static void core_audio_sample(int16_t left, int16_t right) {
+    // TODO Implement
+}
+
+static size_t core_audio_sample_batch(const int16_t *data, size_t frames) {
+   // TODO Implement
+   return frames;
+}
+
+unsigned char* game_addr_to_real_addr(
+        unsigned short bank,
+        unsigned short game_addr,
+        unsigned char* base_ptr,
+        unsigned short section_start,
+        unsigned short section_length
+) {
+    unsigned char *result = base_ptr + (game_addr - section_start);
+    if (bank > 0) {
+        result += (bank - 1) * section_length;
+    }
+    return result;
+}
+
+void read_zeropage(unsigned short address, unsigned short num_bytes, void* dest) {
+    unsigned char *base_address = zeropage_ptr + (address - ZEROPAGE_START);
+    memcpy(dest, base_address, num_bytes);
+}
+
+void read_wram(unsigned char bank, unsigned short address, unsigned short num_bytes, void* dest) {
+    unsigned char *base_address = game_addr_to_real_addr(bank, address, wram_ptr, WRAM_START, WRAM_PAGE_SIZE);
+    memcpy(dest, base_address, num_bytes);
+}
+
+void write_wram_byte(unsigned char bank, unsigned short address, unsigned char byte) {
+    unsigned char *base_address = game_addr_to_real_addr(bank, address, wram_ptr, WRAM_START, WRAM_PAGE_SIZE);
+    *base_address = byte;
+}
+
+void read_rom(unsigned char bank, unsigned short address, unsigned short num_bytes, void *dest) {
+    unsigned char *base_address = game_addr_to_real_addr(bank, address, rom_ptr, ROM_START, ROM_PAGE_SIZE);
+    memcpy(dest, base_address, num_bytes);
+}
+
+
 extern "C"
 JNIEXPORT jint JNICALL
 Java_xyz_heurlin_poketouch_MainActivity_retroAPIVersion(JNIEnv *env, jobject thiz) {
@@ -35,4 +171,42 @@ Java_xyz_heurlin_poketouch_MainActivity_retroLibraryName(JNIEnv *env, jobject th
     retro_system_info info{};
     retro_get_system_info(&info);
     return (*env).NewStringUTF(info.library_name);
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_retroInit(JNIEnv *env, jobject thiz) {
+    retro_set_environment(core_environment);
+    retro_set_video_refresh(core_video_refresh);
+    retro_set_input_poll(core_input_poll);
+    retro_set_input_state(core_input_state);
+    retro_set_audio_sample(core_audio_sample);
+    retro_set_audio_sample_batch(core_audio_sample_batch);
+    retro_init();
+}
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_coreLoadGame(JNIEnv *env,
+                                                                           jobject thiz,
+                                                                           jbyteArray bytes) {
+    jboolean isCopy;
+    jbyte *b = env->GetByteArrayElements(bytes, &isCopy);
+
+    struct retro_game_info info = { "pokecrystal.gbc", 0 };
+    info.size = env->GetArrayLength(bytes);
+    info.data = b;
+
+    auto res = retro_load_game(&info);
+    env->ReleaseByteArrayElements(bytes, b, 0);
+    return res;
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_readRomBytes_1(JNIEnv *env, jobject thiz,
+                                                                             jbyte bank,
+                                                                             jint game_address,
+                                                                             jbyteArray dest) {
+    auto num_bytes = env->GetArrayLength(dest);
+    unsigned char local_dest[num_bytes];
+    read_rom(bank, game_address, num_bytes, local_dest);
+    env->SetByteArrayRegion(dest, 0, num_bytes, reinterpret_cast<const jbyte *>(local_dest));
 }

@@ -13,26 +13,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import xyz.heurlin.poketouch.components.EmulatorView
 import xyz.heurlin.poketouch.components.MoveSelection
+import xyz.heurlin.poketouch.emulator.Charmap
+import xyz.heurlin.poketouch.emulator.Offsets
+import xyz.heurlin.poketouch.emulator.libretro.GambatteFrontend
 import xyz.heurlin.poketouch.types.MovePP
 import xyz.heurlin.poketouch.types.PokemonMove
 import xyz.heurlin.poketouch.types.PokemonType
 import xyz.heurlin.poketouch.ui.theme.PokeTouch2Theme
 
 class MainActivity : ComponentActivity() {
-    external fun helloWorld(): String
-    external fun retroAPIVersion(): Int
-    external fun retroLibraryName(): String
-    companion object {
-        init {
-            System.loadLibrary("poketouch")
-        }
-    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        println("[C++ bridge] ${helloWorld()}")
-        println("[C++ bridge] Retro API version: ${retroAPIVersion()}")
-        println("[C++ bridge] Retro library name: ${retroLibraryName()}")
+
+        val emu = GambatteFrontend()
+        emu.loadRom(resources.openRawResource(R.raw.pokecrystal))
+        val bytes = emu.readRomBytes(Offsets.RomBankNames, Offsets.MoveNames, 50);
+        val strs = Charmap.bytesToString(bytes)
+        println(strs)
+
         setContent {
             PokeTouch2Theme {
                 Surface(

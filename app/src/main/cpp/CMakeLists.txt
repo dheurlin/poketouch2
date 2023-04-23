@@ -49,6 +49,7 @@ target_link_libraries( # Specifies the target library.
                        ${log-lib}
 
                        # Gambatte emulator
-                       /home/danielheurlin/source/gambatte-libretro/libgambatte/libretro/libs/${ANDROID_ABI}/libretro.so)
+                       # /home/danielheurlin/source/gambatte-libretro/libgambatte/libretro/libs/${ANDROID_ABI}/libretro.so)
+                       ${CMAKE_SOURCE_DIR}/../../../libs/libgambatte/${ANDROID_ABI}/libretro.so)
 
 target_include_directories(poketouch PRIVATE headers/)
