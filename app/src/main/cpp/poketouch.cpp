@@ -1,26 +1,12 @@
 #include <jni.h>
 #include <android/log.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include "headers/libretro.h"
 
-// Write C++ code here.
-//
-// Do not forget to dynamically load the C++ library into your application.
-//
-// For instance,
-//
-// In MainActivity.java:
-//    static {
-//       System.loadLibrary("poketouch");
-//    }
-//
-// Or, in MainActivity.kt:
-//    companion object {
-//      init {
-//         System.loadLibrary("poketouch")
-//      }
-//    }
+
+JavaVM *jvm;
+jobject my_frontend;
 
 #define ROM_START      0x0000
 #define ZEROPAGE_START 0xFF80
@@ -106,29 +92,44 @@ static bool core_environment(unsigned cmd, void *data) {
 }
 
 static void core_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch) {
+    core_log(RETRO_LOG_DEBUG, "Calling core_video_refresh");
     // TODO Implement
     return;
 }
+
 static void core_input_poll() {
+    core_log(RETRO_LOG_DEBUG, "Calling core_input_poll");
     // TODO Implement
 }
 
 static int16_t core_input_state(unsigned port, unsigned device, unsigned index, unsigned id) {
+    core_log(RETRO_LOG_DEBUG, "Calling core_input_state");
+    return 0;
 }
 
 static void core_audio_sample(int16_t left, int16_t right) {
-    // TODO Implement
+    core_log(RETRO_LOG_INFO, "Calling audio_sample_sample\n");
 }
+
+#define SOUND_SAMPLES_PER_FRAME   35112
 
 static size_t core_audio_sample_batch(const int16_t *data, size_t frames) {
-   // TODO Implement
-   return frames;
+    JNIEnv *env = nullptr;
+    jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+
+    auto bb = env->NewDirectByteBuffer((void *) data, SOUND_SAMPLES_PER_FRAME * frames * 2 * 2);
+
+    auto cls = env->GetObjectClass(my_frontend);
+    auto mid = env->GetMethodID(cls, "audioBatchCallback", "(Ljava/nio/ByteBuffer;J)J");
+    auto res = env->CallLongMethod(my_frontend, mid, bb, (jlong)frames);
+
+    return res;
 }
 
-unsigned char* game_addr_to_real_addr(
+unsigned char *game_addr_to_real_addr(
         unsigned short bank,
         unsigned short game_addr,
-        unsigned char* base_ptr,
+        unsigned char *base_ptr,
         unsigned short section_start,
         unsigned short section_length
 ) {
@@ -139,23 +140,26 @@ unsigned char* game_addr_to_real_addr(
     return result;
 }
 
-void read_zeropage(unsigned short address, unsigned short num_bytes, void* dest) {
+void read_zeropage(unsigned short address, unsigned short num_bytes, void *dest) {
     unsigned char *base_address = zeropage_ptr + (address - ZEROPAGE_START);
     memcpy(dest, base_address, num_bytes);
 }
 
-void read_wram(unsigned char bank, unsigned short address, unsigned short num_bytes, void* dest) {
-    unsigned char *base_address = game_addr_to_real_addr(bank, address, wram_ptr, WRAM_START, WRAM_PAGE_SIZE);
+void read_wram(unsigned char bank, unsigned short address, unsigned short num_bytes, void *dest) {
+    unsigned char *base_address = game_addr_to_real_addr(bank, address, wram_ptr, WRAM_START,
+                                                         WRAM_PAGE_SIZE);
     memcpy(dest, base_address, num_bytes);
 }
 
 void write_wram_byte(unsigned char bank, unsigned short address, unsigned char byte) {
-    unsigned char *base_address = game_addr_to_real_addr(bank, address, wram_ptr, WRAM_START, WRAM_PAGE_SIZE);
+    unsigned char *base_address = game_addr_to_real_addr(bank, address, wram_ptr, WRAM_START,
+                                                         WRAM_PAGE_SIZE);
     *base_address = byte;
 }
 
 void read_rom(unsigned char bank, unsigned short address, unsigned short num_bytes, void *dest) {
-    unsigned char *base_address = game_addr_to_real_addr(bank, address, rom_ptr, ROM_START, ROM_PAGE_SIZE);
+    unsigned char *base_address = game_addr_to_real_addr(bank, address, rom_ptr, ROM_START,
+                                                         ROM_PAGE_SIZE);
     memcpy(dest, base_address, num_bytes);
 }
 
@@ -175,6 +179,9 @@ Java_xyz_heurlin_poketouch_MainActivity_retroLibraryName(JNIEnv *env, jobject th
 extern "C"
 JNIEXPORT void JNICALL
 Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_retroInit(JNIEnv *env, jobject thiz) {
+    env->GetJavaVM(&jvm);
+    my_frontend = env->NewGlobalRef(thiz);
+
     retro_set_environment(core_environment);
     retro_set_video_refresh(core_video_refresh);
     retro_set_input_poll(core_input_poll);
@@ -191,7 +198,7 @@ Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_coreLoadGame(JNIEn
     jboolean isCopy;
     jbyte *b = env->GetByteArrayElements(bytes, &isCopy);
 
-    struct retro_game_info info = { "pokecrystal.gbc", 0 };
+    struct retro_game_info info = {"pokecrystal.gbc", 0};
     info.size = env->GetArrayLength(bytes);
     info.data = b;
 
@@ -201,7 +208,8 @@ Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_coreLoadGame(JNIEn
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_readRomBytes_1(JNIEnv *env, jobject thiz,
+Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_readRomBytes_1(JNIEnv *env,
+                                                                             jobject thiz,
                                                                              jbyte bank,
                                                                              jint game_address,
                                                                              jbyteArray dest) {
@@ -209,4 +217,9 @@ Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_readRomBytes_1(JNI
     unsigned char local_dest[num_bytes];
     read_rom(bank, game_address, num_bytes, local_dest);
     env->SetByteArrayRegion(dest, 0, num_bytes, reinterpret_cast<const jbyte *>(local_dest));
+}
+extern "C"
+JNIEXPORT jint JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_retroRun(JNIEnv *env, jobject thiz) {
+    return retro_run();
 }

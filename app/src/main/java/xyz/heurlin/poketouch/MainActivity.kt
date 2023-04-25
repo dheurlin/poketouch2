@@ -20,17 +20,22 @@ import xyz.heurlin.poketouch.types.MovePP
 import xyz.heurlin.poketouch.types.PokemonMove
 import xyz.heurlin.poketouch.types.PokemonType
 import xyz.heurlin.poketouch.ui.theme.PokeTouch2Theme
+import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        val emu = GambatteFrontend()
-        emu.loadRom(resources.openRawResource(R.raw.pokecrystal))
-        val bytes = emu.readRomBytes(Offsets.RomBankNames, Offsets.MoveNames, 50);
-        val strs = Charmap.bytesToString(bytes)
-        println(strs)
+        val emu = GambatteFrontend().apply {
+            loadRom(resources.openRawResource(R.raw.pokecrystal))
+        }
+
+        thread {
+            while (true) {
+                emu.retroRun()
+            }
+        }
 
         setContent {
             PokeTouch2Theme {

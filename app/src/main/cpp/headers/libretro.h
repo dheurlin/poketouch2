@@ -3890,7 +3890,7 @@ RETRO_API void retro_reset(void);
  * a frame if GET_CAN_DUPE returns true.
  * In this case, the video callback can take a NULL argument for data.
  */
-RETRO_API void retro_run(void);
+RETRO_API int retro_run(void);
 
 /* Returns the amount of data the implementation requires to serialize
  * internal state (save states).

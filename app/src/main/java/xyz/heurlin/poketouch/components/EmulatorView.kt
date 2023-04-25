@@ -47,8 +47,8 @@ fun EmulatorView(
                 emulatorViewModel::updateControllerState,
                 cxt.findActivity()
             ).apply {
-                start()
-                loadState()
+//                start()
+//                loadState()
             }
         }, modifier = Modifier.fillMaxWidth())
         Controller(
