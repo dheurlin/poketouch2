@@ -1,13 +1,12 @@
 package xyz.heurlin.poketouch.emulator.libretro
 
-import android.media.AudioAttributes
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioTrack
 import java.io.InputStream
 import java.nio.ByteBuffer
+import kotlin.concurrent.thread
 
-class GambatteFrontend {
+class GambatteFrontend(private val screenView: IScreenView) {
     private val audio = AudioTrack.Builder()
         .setAudioFormat(
             AudioFormat.Builder()
@@ -36,11 +35,24 @@ class GambatteFrontend {
     private external fun coreLoadGame(bytes: ByteArray): Boolean
     private external fun readRomBytes_(bank: Byte, gameAddress: Int, dest: ByteArray)
 
-    external fun retroRun(): Int;
+    private external fun retroRun(): Int;
 
     private fun audioBatchCallback(data: ByteBuffer, frames: Long): Long {
         // TODO Popping when audio goes to zero; implement slight fade-out to prevent?
         return audio.write(data, frames.toInt() * 2 * 2, AudioTrack.WRITE_BLOCKING).toLong()
+    }
+
+    private fun videoRefreshCallback(buffer: ByteBuffer, width: Int, height: Int, pitch: Long) {
+        return screenView.videoRefresh(buffer, width, height, pitch)
+    }
+
+    fun run(): Thread {
+        return thread {
+           while (true)  {
+               retroRun()
+               screenView.videoRender()
+           }
+        }
     }
 
     fun loadRom(rom: InputStream) {

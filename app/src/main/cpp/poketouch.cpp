@@ -91,12 +91,6 @@ static bool core_environment(unsigned cmd, void *data) {
     return true;
 }
 
-static void core_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch) {
-    core_log(RETRO_LOG_DEBUG, "Calling core_video_refresh");
-    // TODO Implement
-    return;
-}
-
 static void core_input_poll() {
     core_log(RETRO_LOG_DEBUG, "Calling core_input_poll");
     // TODO Implement
@@ -121,10 +115,24 @@ static size_t core_audio_sample_batch(const int16_t *data, size_t frames) {
 
     auto cls = env->GetObjectClass(my_frontend);
     auto mid = env->GetMethodID(cls, "audioBatchCallback", "(Ljava/nio/ByteBuffer;J)J");
-    auto res = env->CallLongMethod(my_frontend, mid, bb, (jlong)frames);
+    auto res = env->CallLongMethod(my_frontend, mid, bb, (jlong) frames);
 
     return res;
 }
+
+#define VIDEO_HEIGHT 144
+#define VIDEO_BUFF_SIZE (256 * VIDEO_HEIGHT * sizeof(uint16_t))
+
+static void core_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch) {
+    JNIEnv *env = nullptr;
+    jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+
+    auto bb = env->NewDirectByteBuffer((void *) data, VIDEO_BUFF_SIZE);
+    auto cls = env->GetObjectClass(my_frontend);
+    auto mid = env->GetMethodID(cls, "videoRefreshCallback", "(Ljava/nio/ByteBuffer;IIJ)V");
+    env->CallVoidMethod(my_frontend, mid, bb, (jint)width, (jint)height, (jlong)pitch);
+}
+
 
 unsigned char *game_addr_to_real_addr(
         unsigned short bank,

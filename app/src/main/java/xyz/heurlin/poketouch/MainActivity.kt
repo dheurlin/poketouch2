@@ -27,15 +27,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        val emu = GambatteFrontend().apply {
-            loadRom(resources.openRawResource(R.raw.pokecrystal))
-        }
-
-        thread {
-            while (true) {
-                emu.retroRun()
-            }
-        }
+//        val emu = GambatteFrontend().apply {
+//            loadRom(resources.openRawResource(R.raw.pokecrystal))
+//        }
+//
+//        thread {
+//            while (true) {
+//                emu.retroRun()
+//            }
+//        }
 
         setContent {
             PokeTouch2Theme {

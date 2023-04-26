@@ -14,6 +14,7 @@ import xyz.heurlin.poketouch.ControllerMode
 import xyz.heurlin.poketouch.EmulatorViewModel
 import xyz.heurlin.poketouch.R
 import xyz.heurlin.poketouch.emulator.Emulator
+import xyz.heurlin.poketouch.emulator.libretro.GambatteFrontend
 
 fun Context.findActivity(): Activity {
     var context = this
@@ -29,36 +30,44 @@ fun EmulatorView(
     modifier: Modifier = Modifier,
     emulatorViewModel: EmulatorViewModel = viewModel()
 ) {
-    var emulator by remember { mutableStateOf<Emulator?>(null) }
+//    var emulator by remember { mutableStateOf<Emulator?>(null) }
+    var emulator by remember { mutableStateOf<GambatteFrontend?>(null) }
     val controllerMode = emulatorViewModel.controllerMode
 
     BackHandler(enabled = true) {
-       emulator?.backPressed = true
+//       emulator?.backPressed = true
     }
 
     Column(modifier) {
-        Screen(onScreenCreated = { screen, cxt ->
+        GLScreen(onScreenCreated = { screen, cxt ->
             println("Screen created!, $screen")
-            emulator = Emulator(
-                cxt.resources.openRawResource(R.raw.pokecrystal),
-                screen,
-                emulatorViewModel.controllerState,
-                emulatorViewModel::updateControllerMode,
-                emulatorViewModel::updateControllerState,
-                cxt.findActivity()
-            ).apply {
+            emulator = GambatteFrontend(screen).apply {
+                loadRom(cxt.resources.openRawResource(R.raw.pokecrystal))
+                run()
+            }
+//            emulator = Emulator(
+//                cxt.resources.openRawResource(R.raw.pokecrystal),
+//                screen,
+//                emulatorViewModel.controllerState,
+//                emulatorViewModel::updateControllerMode,
+//                emulatorViewModel::updateControllerState,
+//                cxt.findActivity()
+//            ).apply {
 //                start()
 //                loadState()
-            }
+//            }
         }, modifier = Modifier.fillMaxWidth())
         Controller(
             mode = controllerMode,
             onButtonPressed =  emulatorViewModel::updateControllerState,
-            onClickLoad = { emulator?.loadState() },
-            onClickSave = { emulator?.saveState() },
+//            onClickLoad = { emulator?.loadState() },
+//            onClickSave = { emulator?.saveState() },
+            onClickLoad = {},
+            onClickSave = {},
             stopDPadRotation = emulatorViewModel::stopControllerRotation,
             updateControllerMode = emulatorViewModel::updateControllerMode,
-            setTurboSpeed = { speed -> emulator?.let{ it.turboSpeed = speed }  }
+//            setTurboSpeed = { speed -> emulator?.let{ it.turboSpeed = speed }  }
+            setTurboSpeed = {}
         )
     }
 }
