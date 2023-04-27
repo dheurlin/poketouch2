@@ -124,6 +124,8 @@ static size_t core_audio_sample_batch(const int16_t *data, size_t frames) {
 #define VIDEO_BUFF_SIZE (256 * VIDEO_HEIGHT * sizeof(uint16_t))
 
 static void core_video_refresh(const void *data, unsigned width, unsigned height, size_t pitch) {
+    if (!data) return;
+
     JNIEnv *env = nullptr;
     jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
