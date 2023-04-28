@@ -2,6 +2,7 @@ package xyz.heurlin.poketouch.components
 
 import android.content.Context
 import android.graphics.PixelFormat
+import android.opengl.GLES10
 import android.opengl.GLSurfaceView
 import xyz.heurlin.poketouch.emulator.libretro.IScreenView
 import java.nio.ByteBuffer
@@ -56,37 +57,37 @@ class ScreenViewGL(private val context: Context) : GLSurfaceView(context), IScre
         )
 
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {
-            gl.glEnable(GL10.GL_TEXTURE_2D);
-            gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-            gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
+            GLES10.glEnable(GLES10.GL_TEXTURE_2D);
+            GLES10.glEnableClientState(GLES10.GL_VERTEX_ARRAY);
+            GLES10.glEnableClientState(GLES10.GL_TEXTURE_COORD_ARRAY);
 
-            gl.glGenTextures(1, textures, 0);
-            gl.glBindTexture(GL10.GL_TEXTURE_2D, texId);
+            GLES10.glGenTextures(1, textures, 0);
+            GLES10.glBindTexture(GLES10.GL_TEXTURE_2D, texId);
 
-            gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_NEAREST);
-            gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_NEAREST);
+            GLES10.glTexParameterx(GLES10.GL_TEXTURE_2D, GLES10.GL_TEXTURE_MAG_FILTER, GLES10.GL_NEAREST);
+            GLES10.glTexParameterx(GLES10.GL_TEXTURE_2D, GLES10.GL_TEXTURE_MIN_FILTER, GLES10.GL_NEAREST);
 
-            gl.glTexImage2D(
-                GL10.GL_TEXTURE_2D,
+            GLES10.glTexImage2D(
+                GLES10.GL_TEXTURE_2D,
                 0,
-                GL10.GL_RGB,
+                GLES10.GL_RGB,
                 GameBoyDimensions.rowLength,
                 GameBoyDimensions.height,
                 0,
-                GL10.GL_RGB,
-                GL10.GL_UNSIGNED_SHORT_5_6_5,
+                GLES10.GL_RGB,
+                GLES10.GL_UNSIGNED_SHORT_5_6_5,
                 null
             )
         }
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) {
-            gl.glViewport(0, 0, width, height);
+            GLES10.glViewport(0, 0, width, height);
             setTextureCordinates(width, height)
         }
 
         private fun setTextureCordinates(screenWidth: Int, screenHeight: Int) {
             val nearestIntegerScaleFactor = screenWidth / GameBoyDimensions.width
-            val marginXInPixels = (screenWidth - ((GameBoyDimensions.rowLengthDiff) * nearestIntegerScaleFactor)) / 2
+            val marginXInPixels = (screenWidth - ((GameBoyDimensions.width) * nearestIntegerScaleFactor)) / 2
             val marginYInPixels = (screenHeight - (GameBoyDimensions.height * nearestIntegerScaleFactor)) / 2
 
             val minX = 0.0f - (marginXInPixels.toFloat() / screenWidth .toFloat())
@@ -109,26 +110,27 @@ class ScreenViewGL(private val context: Context) : GLSurfaceView(context), IScre
         }
 
         override fun onDrawFrame(gl: GL10) {
-            gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
+            GLES10.glClear(GLES10.GL_COLOR_BUFFER_BIT)
 
-            gl.glActiveTexture(GL10.GL_TEXTURE0);
-            gl.glBindTexture(GL10.GL_TEXTURE_2D, texId);
+            GLES10.glActiveTexture(GLES10.GL_TEXTURE0);
+            GLES10.glBindTexture(GLES10.GL_TEXTURE_2D, texId);
 
-            gl.glTexSubImage2D(
-                GL10.GL_TEXTURE_2D,
+            GLES10.glTexSubImage2D(
+                GLES10.GL_TEXTURE_2D,
                 0,
                 0,
                 0,
                 GameBoyDimensions.rowLength,
+//                GameBoyDimensions.width,
                 GameBoyDimensions.height,
-                GL10.GL_RGB,
-                GL10.GL_UNSIGNED_SHORT_5_6_5,
+                GLES10.GL_RGB,
+                GLES10.GL_UNSIGNED_SHORT_5_6_5,
                 data
             );
 
-            gl.glVertexPointer(3, GL10.GL_FLOAT, 0, vertex);
-            gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, texcoords);
-            gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, 0, 4);
+            GLES10.glVertexPointer(3, GLES10.GL_FLOAT, 0, vertex);
+            GLES10.glTexCoordPointer(2, GLES10.GL_FLOAT, 0, texcoords);
+            GLES10.glDrawArrays(GLES10.GL_TRIANGLE_STRIP, 0, 4);
         }
 
         fun videoRefresh(buffer: ByteBuffer, width: Int, height: Int, pitch: Long) {
