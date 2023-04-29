@@ -273,3 +273,37 @@ Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_setInput(JNIEnv *e
         g_joy[RETRO_DEVICE_ID_JOYPAD_RIGHT] = 1;
     }
 }
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_serializeSize(JNIEnv *env,
+                                                                            jobject thiz) {
+    return retro_serialize_size();
+}
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_serializeState(JNIEnv *env,
+                                                                             jobject thiz,
+                                                                             jbyteArray dest) {
+    auto save_size = retro_serialize_size();
+    unsigned char saveblob[save_size];
+    if (!retro_serialize(saveblob, save_size)) {
+        core_log(RETRO_LOG_ERROR, "Could not generate savestate, core returned error");
+        return false;
+    }
+
+    env->SetByteArrayRegion(dest, 0, save_size, reinterpret_cast<const jbyte *>(saveblob));
+    return true;
+}
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_deserializeState(JNIEnv *env,
+                                                                               jobject thiz,
+                                                                               jbyteArray data) {
+    jboolean isCopy;
+    auto bytes = env->GetByteArrayElements(data, &isCopy);
+    if (!retro_unserialize(bytes, env->GetArrayLength(data))) {
+        core_log(RETRO_LOG_ERROR, "Could not load savestate, core returned error");
+        return false;
+    }
+    return true;
+}

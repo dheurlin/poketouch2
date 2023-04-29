@@ -42,11 +42,13 @@ fun EmulatorView(
         GLScreen(onScreenCreated = { screen, cxt ->
             println("Screen created!, $screen")
             emulator = GambatteFrontend(
+                cxt,
                 screen,
                 emulatorViewModel.controllerState,
             ).apply {
                 loadRom(cxt.resources.openRawResource(R.raw.pokecrystal))
                 run()
+                loadState()
             }
 //            emulator = Emulator(
 //                cxt.resources.openRawResource(R.raw.pokecrystal),
@@ -63,10 +65,8 @@ fun EmulatorView(
         Controller(
             mode = controllerMode,
             onButtonPressed =  emulatorViewModel::updateControllerState,
-//            onClickLoad = { emulator?.loadState() },
-//            onClickSave = { emulator?.saveState() },
-            onClickLoad = {},
-            onClickSave = {},
+            onClickLoad = { emulator?.loadState() },
+            onClickSave = { emulator?.saveState() },
             stopDPadRotation = emulatorViewModel::stopControllerRotation,
             updateControllerMode = emulatorViewModel::updateControllerMode,
 //            setTurboSpeed = { speed -> emulator?.let{ it.turboSpeed = speed }  }

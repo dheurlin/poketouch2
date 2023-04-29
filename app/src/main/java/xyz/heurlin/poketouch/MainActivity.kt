@@ -1,6 +1,10 @@
 package xyz.heurlin.poketouch
 
+import android.Manifest
+import android.content.Context
 import android.os.Bundle
+import android.util.AttributeSet
+import android.view.View
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,6 +24,7 @@ import xyz.heurlin.poketouch.types.MovePP
 import xyz.heurlin.poketouch.types.PokemonMove
 import xyz.heurlin.poketouch.types.PokemonType
 import xyz.heurlin.poketouch.ui.theme.PokeTouch2Theme
+import xyz.heurlin.poketouch.util.withPermission
 import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
@@ -47,6 +52,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onCreateView(name: String, context: Context, attrs: AttributeSet): View? {
+        withPermission(Manifest.permission.READ_EXTERNAL_STORAGE, this, context) {
+            println("Read permission granted")
+        }
+        withPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, this, context) {
+            println("Write permission granted")
+        }
+        return super.onCreateView(name, context, attrs)
     }
 }
 
