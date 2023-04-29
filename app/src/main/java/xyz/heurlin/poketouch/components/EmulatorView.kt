@@ -35,7 +35,7 @@ fun EmulatorView(
     val controllerMode = emulatorViewModel.controllerMode
 
     BackHandler(enabled = true) {
-//       emulator?.backPressed = true
+       emulator?.backPressed = true
     }
 
     Column(modifier) {

@@ -27,6 +27,8 @@ class GambatteFrontend(
             play()
         }
 
+    var backPressed = false
+
     companion object {
         init {
             System.loadLibrary("poketouch")
@@ -64,9 +66,15 @@ class GambatteFrontend(
     }
 
     private fun setJoypadInput() {
+        val b = if (backPressed) {
+            backPressed = false
+            true
+        } else {
+            false
+        }
         setInput(
             a = controllerState.buttonsPressed[Button.A] == true,
-            b = controllerState.buttonsPressed[Button.B] == true,
+            b = b,
             start = controllerState.buttonsPressed[Button.Start] == true,
             select = controllerState.buttonsPressed[Button.Select] == true,
             up = controllerState.direction == DpadDirection.Up,
