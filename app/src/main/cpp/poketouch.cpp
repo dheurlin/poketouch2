@@ -19,6 +19,8 @@ unsigned char *zeropage_ptr = nullptr;
 unsigned char *wram_ptr = nullptr;
 unsigned char *rom_ptr = nullptr;
 
+int16_t g_joy[RETRO_DEVICE_ID_JOYPAD_R3+1] = { 0 };
+
 void set_memory_map_pointers(struct retro_memory_map *desc) {
     int i;
     for (i = 0; i < desc->num_descriptors; i++) {
@@ -97,8 +99,10 @@ static void core_input_poll() {
 }
 
 static int16_t core_input_state(unsigned port, unsigned device, unsigned index, unsigned id) {
-    core_log(RETRO_LOG_DEBUG, "Calling core_input_state");
-    return 0;
+    if (port || index || device != RETRO_DEVICE_JOYPAD)
+        return 0;
+
+    return g_joy[id];
 }
 
 static void core_audio_sample(int16_t left, int16_t right) {
@@ -232,4 +236,40 @@ extern "C"
 JNIEXPORT jint JNICALL
 Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_retroRun(JNIEnv *env, jobject thiz) {
     return retro_run();
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_setInput(JNIEnv *env, jobject thiz,
+                                                                       jboolean a, jboolean b,
+                                                                       jboolean start,
+                                                                       jboolean select, jboolean up,
+                                                                       jboolean down, jboolean left,
+                                                                       jboolean right) {
+    for (auto &btn : g_joy) {
+       btn = 0;
+    }
+    if (a) {
+       g_joy[RETRO_DEVICE_ID_JOYPAD_A] = 1;
+    }
+    if (b) {
+        g_joy[RETRO_DEVICE_ID_JOYPAD_B] = 1;
+    }
+    if (start) {
+        g_joy[RETRO_DEVICE_ID_JOYPAD_START] = 1;
+    }
+    if (select) {
+        g_joy[RETRO_DEVICE_ID_JOYPAD_SELECT] = 1;
+    }
+    if (up) {
+        g_joy[RETRO_DEVICE_ID_JOYPAD_UP] = 1;
+    }
+    if (down) {
+        g_joy[RETRO_DEVICE_ID_JOYPAD_DOWN] = 1;
+    }
+    if (left) {
+        g_joy[RETRO_DEVICE_ID_JOYPAD_LEFT] = 1;
+    }
+    if (right) {
+        g_joy[RETRO_DEVICE_ID_JOYPAD_RIGHT] = 1;
+    }
 }

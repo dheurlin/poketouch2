@@ -41,7 +41,10 @@ fun EmulatorView(
     Column(modifier) {
         GLScreen(onScreenCreated = { screen, cxt ->
             println("Screen created!, $screen")
-            emulator = GambatteFrontend(screen).apply {
+            emulator = GambatteFrontend(
+                screen,
+                emulatorViewModel.controllerState,
+            ).apply {
                 loadRom(cxt.resources.openRawResource(R.raw.pokecrystal))
                 run()
             }
