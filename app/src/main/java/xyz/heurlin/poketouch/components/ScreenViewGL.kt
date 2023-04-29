@@ -11,10 +11,11 @@ import java.nio.FloatBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-private object GameBoyDimensions {
+private object GBDimensions {
     const val width = 160
     const val height = 144
     const val rowLength = 256
+    const val bytesPerPixel = 2
     val rowLengthDiff get() = rowLength - width
 }
 
@@ -40,7 +41,10 @@ class ScreenViewGL(private val context: Context) : GLSurfaceView(context), IScre
         private val textures = intArrayOf(0)
         private val texId get() = textures[0]
 
-        private var data: ByteBuffer? = null
+        private var data: ByteBuffer = ByteBuffer.allocateDirect(
+            GBDimensions.width * GBDimensions.height * GBDimensions.bytesPerPixel
+        )
+        private val dataMutex = Object()
 
         private val vertex = makeFloatBuffer(
             -1.0f, +1.0f, 0.0f,
@@ -64,15 +68,23 @@ class ScreenViewGL(private val context: Context) : GLSurfaceView(context), IScre
             GLES10.glGenTextures(1, textures, 0);
             GLES10.glBindTexture(GLES10.GL_TEXTURE_2D, texId);
 
-            GLES10.glTexParameterx(GLES10.GL_TEXTURE_2D, GLES10.GL_TEXTURE_MAG_FILTER, GLES10.GL_NEAREST);
-            GLES10.glTexParameterx(GLES10.GL_TEXTURE_2D, GLES10.GL_TEXTURE_MIN_FILTER, GLES10.GL_NEAREST);
+            GLES10.glTexParameterx(
+                GLES10.GL_TEXTURE_2D,
+                GLES10.GL_TEXTURE_MAG_FILTER,
+                GLES10.GL_NEAREST
+            );
+            GLES10.glTexParameterx(
+                GLES10.GL_TEXTURE_2D,
+                GLES10.GL_TEXTURE_MIN_FILTER,
+                GLES10.GL_NEAREST
+            );
 
             GLES10.glTexImage2D(
                 GLES10.GL_TEXTURE_2D,
                 0,
                 GLES10.GL_RGB,
-                GameBoyDimensions.rowLength,
-                GameBoyDimensions.height,
+                GBDimensions.width,
+                GBDimensions.height,
                 0,
                 GLES10.GL_RGB,
                 GLES10.GL_UNSIGNED_SHORT_5_6_5,
@@ -82,16 +94,29 @@ class ScreenViewGL(private val context: Context) : GLSurfaceView(context), IScre
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) {
             GLES10.glViewport(0, 0, width, height);
-            setTextureCordinates(width, height)
+//            setCropping(width, height)
         }
 
-        private fun setTextureCordinates(screenWidth: Int, screenHeight: Int) {
-            val nearestIntegerScaleFactor = screenWidth / GameBoyDimensions.width
-            val marginXInPixels = (screenWidth - ((GameBoyDimensions.width) * nearestIntegerScaleFactor)) / 2
-            val marginYInPixels = (screenHeight - (GameBoyDimensions.height * nearestIntegerScaleFactor)) / 2
+        private fun copyBuffer(src: ByteBuffer) {
+            for (row in 0 until GBDimensions.height) {
+                src.position(row * GBDimensions.rowLength * GBDimensions.bytesPerPixel)
+                data.position(row * GBDimensions.width * GBDimensions.bytesPerPixel)
+                for (pixel in 0 until GBDimensions.width * GBDimensions.bytesPerPixel) {
+                    data.put(src.get())
+                }
+            }
+            data.rewind()
+        }
 
-            val minX = 0.0f - (marginXInPixels.toFloat() / screenWidth .toFloat())
-            val maxX = 1.0f + (marginXInPixels.toFloat() / screenWidth .toFloat())
+        private fun setCropping(screenWidth: Int, screenHeight: Int) {
+            val nearestIntegerScaleFactor = screenWidth / GBDimensions.width
+            val marginXInPixels =
+                (screenWidth - ((GBDimensions.width) * nearestIntegerScaleFactor)) / 2
+            val marginYInPixels =
+                (screenHeight - (GBDimensions.height * nearestIntegerScaleFactor)) / 2
+
+            val minX = 0.0f - (marginXInPixels.toFloat() / screenWidth.toFloat())
+            val maxX = 1.0f + (marginXInPixels.toFloat() / screenWidth.toFloat())
             val minY = 0.0f - (marginYInPixels.toFloat() / screenHeight.toFloat())
             val maxY = 1.0f + (marginYInPixels.toFloat() / screenHeight.toFloat())
 
@@ -110,31 +135,34 @@ class ScreenViewGL(private val context: Context) : GLSurfaceView(context), IScre
         }
 
         override fun onDrawFrame(gl: GL10) {
-            GLES10.glClear(GLES10.GL_COLOR_BUFFER_BIT)
+            synchronized(dataMutex) {
+                GLES10.glClear(GLES10.GL_COLOR_BUFFER_BIT)
 
-            GLES10.glActiveTexture(GLES10.GL_TEXTURE0);
-            GLES10.glBindTexture(GLES10.GL_TEXTURE_2D, texId);
+                GLES10.glActiveTexture(GLES10.GL_TEXTURE0);
+                GLES10.glBindTexture(GLES10.GL_TEXTURE_2D, texId);
 
-            GLES10.glTexSubImage2D(
-                GLES10.GL_TEXTURE_2D,
-                0,
-                0,
-                0,
-                GameBoyDimensions.rowLength,
-//                GameBoyDimensions.width,
-                GameBoyDimensions.height,
-                GLES10.GL_RGB,
-                GLES10.GL_UNSIGNED_SHORT_5_6_5,
-                data
-            );
+                GLES10.glTexSubImage2D(
+                    GLES10.GL_TEXTURE_2D,
+                    0,
+                    0,
+                    0,
+                    GBDimensions.width,
+                    GBDimensions.height,
+                    GLES10.GL_RGB,
+                    GLES10.GL_UNSIGNED_SHORT_5_6_5,
+                    data
+                );
 
-            GLES10.glVertexPointer(3, GLES10.GL_FLOAT, 0, vertex);
-            GLES10.glTexCoordPointer(2, GLES10.GL_FLOAT, 0, texcoords);
-            GLES10.glDrawArrays(GLES10.GL_TRIANGLE_STRIP, 0, 4);
+                GLES10.glVertexPointer(3, GLES10.GL_FLOAT, 0, vertex);
+                GLES10.glTexCoordPointer(2, GLES10.GL_FLOAT, 0, texcoords);
+                GLES10.glDrawArrays(GLES10.GL_TRIANGLE_STRIP, 0, 4);
+            }
         }
 
         fun videoRefresh(buffer: ByteBuffer, width: Int, height: Int, pitch: Long) {
-            data = buffer
+            synchronized(dataMutex) {
+                copyBuffer(buffer)
+            }
         }
 
     }
