@@ -47,10 +47,10 @@ class ScreenViewGL(private val context: Context) : GLSurfaceView(context), IScre
         private val dataMutex = Object()
 
         private val vertex = makeFloatBuffer(
-            -1.0f, +1.0f, 0.0f,
-            +1.0f, +1.0f, 0.0f,
-            -1.0f, -1.0f, 0.0f,
-            +1.0f, -1.0f, 0.0f
+            -1.0f, +1.0f, 0.0f, // top left
+            +1.0f, +1.0f, 0.0f, // top right
+            -1.0f, -1.0f, 0.0f, // bottom left
+            +1.0f, -1.0f, 0.0f // bottom right
         )
 
         private val texcoords = makeFloatBuffer(
@@ -94,7 +94,7 @@ class ScreenViewGL(private val context: Context) : GLSurfaceView(context), IScre
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) {
             GLES10.glViewport(0, 0, width, height);
-//            setCropping(width, height)
+            resizeViewport(width, height)
         }
 
         private fun copyBuffer(src: ByteBuffer) {
@@ -108,28 +108,31 @@ class ScreenViewGL(private val context: Context) : GLSurfaceView(context), IScre
             data.rewind()
         }
 
-        private fun setCropping(screenWidth: Int, screenHeight: Int) {
+        private fun resizeViewport(screenWidth: Int, screenHeight: Int) {
             val nearestIntegerScaleFactor = screenWidth / GBDimensions.width
             val marginXInPixels =
                 (screenWidth - ((GBDimensions.width) * nearestIntegerScaleFactor)) / 2
             val marginYInPixels =
                 (screenHeight - (GBDimensions.height * nearestIntegerScaleFactor)) / 2
 
-            val minX = 0.0f - (marginXInPixels.toFloat() / screenWidth.toFloat())
-            val maxX = 1.0f + (marginXInPixels.toFloat() / screenWidth.toFloat())
-            val minY = 0.0f - (marginYInPixels.toFloat() / screenHeight.toFloat())
-            val maxY = 1.0f + (marginYInPixels.toFloat() / screenHeight.toFloat())
+            val quadrantWidth = screenWidth.toFloat() / 2
+            val quadrantHeight = screenHeight.toFloat() / 2
+
+            val minX = -1.0f + (marginXInPixels.toFloat() / quadrantWidth)
+            val maxX = 1.0f - (marginXInPixels.toFloat() /  quadrantWidth)
+            val minY = -1.0f + (marginYInPixels.toFloat() / quadrantHeight)
+            val maxY = 1.0f - (marginYInPixels.toFloat() /  quadrantHeight)
 
             println("minXFraction, $minX")
             println("minYFraction, $minY")
             println("maxXFraction, $maxX")
             println("maxYFraction, $maxY")
 
-            texcoords.apply {
-                put(0, minX); put(1, minY)
-                put(2, maxX); put(3, minY)
-                put(4, minX); put(5, maxY)
-                put(6, maxX); put(7, maxY)
+            vertex.apply {
+                put(0, minX); put(1 , maxY)
+                put(3, maxX); put(4 , maxY)
+                put(6, minX); put(7 , minY)
+                put(9, maxX); put(10, minY)
                 rewind()
             }
         }
