@@ -4,9 +4,8 @@ import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Environment
-import xyz.heurlin.poketouch.Button
-import xyz.heurlin.poketouch.ControllerState
-import xyz.heurlin.poketouch.DpadDirection
+import xyz.heurlin.poketouch.*
+import xyz.heurlin.poketouch.emulator.GameLoopInterceptor
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -18,9 +17,11 @@ import kotlin.concurrent.thread
 
 class GambatteFrontend(
     private val context: Context,
-    private val bridge: ILibretroBridge,
+    private val bridge: ILibretroExtended,
     private val screenView: IScreenView,
-    private val controllerState: ControllerState
+    private val controllerState: ControllerState,
+    updateControllerMode: (ControllerMode) -> Unit,
+    updateControllerState: (ControllerAction) -> Unit,
 ) {
     private val audio = AudioTrack.Builder()
         .setAudioFormat(
@@ -35,6 +36,8 @@ class GambatteFrontend(
         .apply {
             play()
         }
+
+    private val interceptor = GameLoopInterceptor(bridge, updateControllerMode, updateControllerState)
 
     var backPressed = false
 
@@ -123,7 +126,10 @@ class GambatteFrontend(
     fun run(): Thread {
         return thread {
             while (true) {
-                bridge.retroRun()
+                val result = bridge.retroRun()
+                if (result == bridge.BREAKPOINT_HIT) {
+                    interceptor.intercept()
+                }
                 screenView.videoRender()
                 setJoypadInput()
             }
@@ -136,5 +142,6 @@ class GambatteFrontend(
         }
         val res = bridge.coreLoadGame(bytes);
         println("Load game results: $res");
+        interceptor.setInitialBreakpoints()
     }
 }

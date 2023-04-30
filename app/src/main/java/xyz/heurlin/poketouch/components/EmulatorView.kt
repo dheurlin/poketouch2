@@ -44,6 +44,8 @@ fun EmulatorView(
                 LibretroBridge(),
                 screen,
                 emulatorViewModel.controllerState,
+                emulatorViewModel::updateControllerMode,
+                emulatorViewModel::updateControllerState,
             ).apply {
                 loadRom(cxt.resources.openRawResource(R.raw.pokecrystal))
                 run()

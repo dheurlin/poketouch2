@@ -34,8 +34,8 @@ class Emulator(
 
     private lateinit var audio: AudioTrack
 
-    private val interceptor =
-        GameLoopInterceptor(wasmBoy, updateControllerMode, updateControllerState)
+//    private val interceptor =
+//        GameLoopInterceptor(wasmBoy, updateControllerMode, updateControllerState)
 
     init {
         loadRom(rom)
@@ -228,7 +228,7 @@ class Emulator(
                 if (shouldSaveState) _saveState()
 
                 if (response == Response.BREAKPOINT.code) {
-                    interceptor.intercept()
+//                    interceptor.intercept()
                 }
                 if (response > Response.OK.code) {
                     screen.getPixelsFromEmulator(wasmBoy)

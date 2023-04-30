@@ -321,7 +321,7 @@ Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_getProgramCounter(JN
 extern "C"
 JNIEXPORT void JNICALL
 Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_readZeropageInternal(JNIEnv *env, jobject thiz,
-                                                                                 jbyte address,
+                                                                                 jint address,
                                                                                  jbyteArray dest
 ) {
     auto num_bytes = env->GetArrayLength(dest);

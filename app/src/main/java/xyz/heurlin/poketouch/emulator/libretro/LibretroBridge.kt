@@ -2,7 +2,7 @@ package xyz.heurlin.poketouch.emulator.libretro
 
 import java.nio.ByteBuffer
 
-class LibretroBridge() : ILibretroBridge, ILibretroExtensionBridge {
+class LibretroBridge() : ILibretroBridge, ILibretroExtensionBridge, ILibretroExtended {
 
     private var videoCb: (buffer: ByteBuffer, width: Int, height: Int, pitch: Long) -> Unit =
         { _: ByteBuffer, _: Int, _: Int, _: Long ->
@@ -42,7 +42,7 @@ class LibretroBridge() : ILibretroBridge, ILibretroExtensionBridge {
     external override fun clearPCBreakpoints()
     external override fun getProgramCounter(): Int
 
-    external fun readZeropageInternal(address: Byte, dest: ByteArray)
+    external fun readZeropageInternal(address: Int, dest: ByteArray)
     external fun readWramInternal(bank: Byte, address: Int, dest: ByteArray)
 
     external override fun writeWramByte(bank: Byte, address: Int, byte: Byte)
@@ -76,7 +76,7 @@ class LibretroBridge() : ILibretroBridge, ILibretroExtensionBridge {
         return dest
     }
 
-    override fun readZeropage(address: Byte, numBytes: Int): ByteArray {
+    override fun readZeropage(address: Int, numBytes: Int): ByteArray {
         val dest = ByteArray(numBytes)
         readZeropageInternal(address, dest)
         return dest

@@ -16,7 +16,6 @@ private object GBDimensions {
     const val height = 144
     const val rowLength = 256
     const val bytesPerPixel = 2
-    val rowLengthDiff get() = rowLength - width
 }
 
 class ScreenViewGL(private val context: Context) : GLSurfaceView(context), IScreenView {

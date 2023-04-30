@@ -1,8 +1,9 @@
 package xyz.heurlin.poketouch.emulator
 
 import WasmBoy
+import xyz.heurlin.poketouch.emulator.libretro.ILibretroExtensionBridge
 
-class BreakpointManager(private val wasmBoy: WasmBoy) {
+class BreakpointManager(private val ext: ILibretroExtensionBridge) {
     enum class Address(val bank: Int, val offset: Int) {
         StartBattle(0x0f, 0x74c1),
         ListMoves(0x14, 0x4d6f),
@@ -21,47 +22,20 @@ class BreakpointManager(private val wasmBoy: WasmBoy) {
     private val addressMapping =
         Address.values().associateBy { address -> Pair(address.bank, address.offset) }
 
-    private var numUsed = 0
-
     fun setPCBreakPoint(addr: Address) {
-        when (numUsed) {
-            0 -> wasmBoy.setProgramCounterBreakpoint0(addr.offset)
-            1 -> wasmBoy.setProgramCounterBreakpoint1(addr.offset)
-            2 -> wasmBoy.setProgramCounterBreakpoint2(addr.offset)
-            3 -> wasmBoy.setProgramCounterBreakpoint3(addr.offset)
-            4 -> wasmBoy.setProgramCounterBreakpoint4(addr.offset)
-            5 -> wasmBoy.setProgramCounterBreakpoint5(addr.offset)
-            6 -> wasmBoy.setProgramCounterBreakpoint6(addr.offset)
-            7 -> wasmBoy.setProgramCounterBreakpoint7(addr.offset)
-            8 -> wasmBoy.setProgramCounterBreakpoint8(addr.offset)
-            9 -> wasmBoy.setProgramCounterBreakpoint9(addr.offset)
-            else -> throw IndexOutOfBoundsException("All breakpoints already used!")
-        }
-        numUsed += 1
+        ext.setPCBreakpoint(addr.bank.toByte(), addr.offset)
     }
 
     fun clearPCBreakPoints() {
-        wasmBoy.setProgramCounterBreakpoint0(-1)
-        wasmBoy.setProgramCounterBreakpoint1(-1)
-        wasmBoy.setProgramCounterBreakpoint2(-1)
-        wasmBoy.setProgramCounterBreakpoint3(-1)
-        wasmBoy.setProgramCounterBreakpoint4(-1)
-        wasmBoy.setProgramCounterBreakpoint5(-1)
-        wasmBoy.setProgramCounterBreakpoint6(-1)
-        wasmBoy.setProgramCounterBreakpoint7(-1)
-        wasmBoy.setProgramCounterBreakpoint8(-1)
-        wasmBoy.setProgramCounterBreakpoint9(-1)
-
-        numUsed = 0
+        ext.clearPCBreakpoints()
     }
 
     private fun getRomBank(): Int {
-        val offset = wasmBoy.getWasmBoyOffsetFromGameBoyOffset(Offsets.hROMBank)
-        return wasmBoy.memory.get(offset).toInt()
+        return ext.readZeropage(Offsets.hROMBank, 1)[0].toUByte().toInt()
     }
 
     fun hitBreakPoint(): Address? {
-        val currentPosition = Pair(getRomBank(), wasmBoy.programCounter)
+        val currentPosition = Pair(getRomBank(), ext.getProgramCounter())
         return addressMapping[currentPosition]
     }
 }

@@ -6,19 +6,23 @@ import xyz.heurlin.poketouch.ControllerAction
 import xyz.heurlin.poketouch.ControllerMode
 import xyz.heurlin.poketouch.ControllerState
 import xyz.heurlin.poketouch.components.MoveButtonInput
+import xyz.heurlin.poketouch.emulator.libretro.ILibretroExtended
+import xyz.heurlin.poketouch.emulator.libretro.ILibretroExtensionBridge
 import xyz.heurlin.poketouch.emulator.wasmboyextensions.*
 import xyz.heurlin.poketouch.types.*
 import kotlin.math.max
 
 class GameLoopInterceptor(
-    private val wasmBoy: WasmBoy,
+    private val ext: ILibretroExtensionBridge,
     private val updateControllerMode: (ControllerMode) -> Unit,
     private val updateControllerState: (ControllerAction) -> Unit,
 ) {
     private var menuOption: Int? = null
-    private val breakMan = BreakpointManager(wasmBoy).apply {
-        clearPCBreakPoints()
-        setPCBreakPoint(BreakpointManager.Address.StartBattle)
+    private val breakMan = BreakpointManager(ext)
+
+    fun setInitialBreakpoints() {
+        breakMan.clearPCBreakPoints()
+        breakMan.setPCBreakPoint(BreakpointManager.Address.StartBattle)
     }
 
     fun intercept() {
@@ -67,7 +71,8 @@ class GameLoopInterceptor(
                 }
 
                 menuOption?.let {
-                    wasmBoy.putByte(Offsets.wBattleMenuCursorPosition, it.toByte())
+                    // TODO Make alias for bank!
+                    ext.writeWramByte(0x1, Offsets.wBattleMenuCursorPosition, it.toByte())
                 }
             }
 
@@ -77,7 +82,7 @@ class GameLoopInterceptor(
 
                 val monStruct = getCurrentPokemonStruct()
 
-                val moveNums = wasmBoy.getBytes(Offsets.wListMoves_MoveIndicesBuffer, 4)
+                val moveNums = ext.readWram(1, Offsets.wListMoves_MoveIndicesBuffer, 4)
                 val moveNames = getMoveNames(moveNums)
                 val movesData = moveNums.takeWhile { it != 0.toByte() }.map {
                     getMoveStruct(it.toUByte().toInt())
@@ -91,11 +96,13 @@ class GameLoopInterceptor(
                         type = movesData[ix].type,
                     )
                 }
-                val actions = List(moves.size) { {
-                    menuOption = it
-                    updateControllerState(ControllerAction.ReleaseAll)
-                    updateControllerState(ControllerAction.ButtonPress(Button.A))
-                } }
+                val actions = List(moves.size) {
+                    {
+                        menuOption = it
+                        updateControllerState(ControllerAction.ReleaseAll)
+                        updateControllerState(ControllerAction.ButtonPress(Button.A))
+                    }
+                }
 
                 val moveInputs: List<MoveButtonInput> = moves.zip(actions) { move, action ->
                     MoveButtonInput.Enabled(move, action)
@@ -111,8 +118,8 @@ class GameLoopInterceptor(
                 updateControllerState(ControllerAction.ReleaseAll)
                 updateControllerMode(ControllerMode.Dpad())
                 menuOption?.let {
-                    wasmBoy.putByte(Offsets.wMenuCursorY, it.toByte())
-                    wasmBoy.putByte(Offsets.wCurMoveNum, it.toByte())
+                    ext.writeWramByte(0, Offsets.wMenuCursorY, it.toByte())
+                    ext.writeWramByte(1, Offsets.wCurMoveNum, it.toByte())
                 }
             }
 
@@ -121,8 +128,8 @@ class GameLoopInterceptor(
     }
 
     private fun getMoveNames(bs: ByteArray): List<String> {
-        val bytes = wasmBoy.getBytesFromBank(
-            Offsets.RomBankNames,
+        val bytes = ext.readRom(
+            Offsets.RomBankNames.toByte(),
             Offsets.MoveNames,
             Offsets.MoveNameLength * Offsets.NumMoves
         )
@@ -135,9 +142,9 @@ class GameLoopInterceptor(
     }
 
     private fun getCurrentPokemonStruct(): PartyMonStruct {
-        val currentMon = wasmBoy.getBytes(Offsets.wCurPartyMon, 1)[0]
+        val currentMon = ext.readWram(0x1, Offsets.wCurPartyMon, 1)[0]
         val monLocation = Offsets.wPartyMons + currentMon.toInt() * Offsets.PartyMonStructSize
-        val bytes = wasmBoy.getBytes(monLocation, Offsets.PartyMonStructSize)
+        val bytes = ext.readWram(0x1, monLocation, Offsets.PartyMonStructSize)
 
         return PartyMonStruct(bytes)
     }
@@ -145,8 +152,8 @@ class GameLoopInterceptor(
     private fun getMoveStruct(moveIndex: Int): MoveStruct {
         val index = max(0, moveIndex - 1)
         val moveOffset = index * Offsets.MoveStructLength
-        val bytes = wasmBoy.getBytesFromBank(
-            Offsets.RomBankMoves,
+        val bytes = ext.readRom(
+            Offsets.RomBankMoves.toByte(),
             Offsets.MovesTable + moveOffset,
             Offsets.MoveStructLength
         )
