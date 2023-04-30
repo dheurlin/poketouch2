@@ -1,19 +1,16 @@
 package xyz.heurlin.poketouch.emulator.libretro
 
-import android.content.Context
-import android.media.AudioTrack
-import xyz.heurlin.poketouch.ControllerState
 import java.nio.ByteBuffer
 
-class LibretroBridge() : ILibretroBridge {
+class LibretroBridge() : ILibretroBridge, ILibretroExtensionBridge {
 
     private var videoCb: (buffer: ByteBuffer, width: Int, height: Int, pitch: Long) -> Unit =
         { _: ByteBuffer, _: Int, _: Int, _: Long ->
-            println("Video callbak not set!")
+            println("Video callback not set!")
         }
 
     private var audioCb: (data: ByteBuffer, frames: Long) -> Long = { _: ByteBuffer, _: Long ->
-        println("Audio callbak not set!")
+        println("Audio callback not set!")
         0
     }
 
@@ -25,7 +22,6 @@ class LibretroBridge() : ILibretroBridge {
 
     external override fun retroInit(): Unit
     external override fun coreLoadGame(bytes: ByteArray): Boolean
-    private external fun readRomBytes_(bank: Byte, gameAddress: Int, dest: ByteArray)
     external override fun setInput(
         a: Boolean,
         b: Boolean,
@@ -41,6 +37,16 @@ class LibretroBridge() : ILibretroBridge {
     external override fun serializeSize(): Long
     external override fun serializeState(dest: ByteArray): Boolean
     external override fun deserializeState(data: ByteArray): Boolean
+    external override fun setPCBreakpoint(bank: Byte, offset: Int)
+
+    external override fun clearPCBreakpoints()
+    external override fun getProgramCounter(): Int
+
+    external fun readZeropageInternal(address: Byte, dest: ByteArray)
+    external fun readWramInternal(bank: Byte, address: Int, dest: ByteArray)
+
+    external override fun writeWramByte(bank: Byte, address: Int, byte: Byte)
+    external fun readRomInternal(bank: Byte, address: Int, dest: ByteArray)
 
     override fun setVideoCb(cb: (buffer: ByteBuffer, width: Int, height: Int, pitch: Long) -> Unit) {
         videoCb = cb
@@ -56,6 +62,24 @@ class LibretroBridge() : ILibretroBridge {
 
     private fun videoRefreshCallback(buffer: ByteBuffer, width: Int, height: Int, pitch: Long) {
         return videoCb(buffer, width, height, pitch)
+    }
+
+    override fun readWram(bank: Byte, address: Int, numBytes: Int): ByteArray {
+        val dest = ByteArray(numBytes)
+        readWramInternal(bank, address, dest)
+        return dest
+    }
+
+    override fun readRom(bank: Byte, address: Int, numBytes: Int): ByteArray {
+        val dest = ByteArray(numBytes)
+        readRomInternal(bank, address, dest)
+        return dest
+    }
+
+    override fun readZeropage(address: Byte, numBytes: Int): ByteArray {
+        val dest = ByteArray(numBytes)
+        readZeropageInternal(address, dest)
+        return dest
     }
 
 }

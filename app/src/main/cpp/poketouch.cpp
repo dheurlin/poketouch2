@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstring>
 #include "headers/libretro.h"
+#include "headers/libretro_extensions.h"
 
 
 JavaVM *jvm;
@@ -221,18 +222,6 @@ Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_coreLoadGame(JNIEnv 
     return res;
 }
 extern "C"
-JNIEXPORT void JNICALL
-Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_readRomBytes_1(JNIEnv *env,
-                                                                           jobject thiz,
-                                                                           jbyte bank,
-                                                                           jint game_address,
-                                                                           jbyteArray dest) {
-    auto num_bytes = env->GetArrayLength(dest);
-    unsigned char local_dest[num_bytes];
-    read_rom(bank, game_address, num_bytes, local_dest);
-    env->SetByteArrayRegion(dest, 0, num_bytes, reinterpret_cast<const jbyte *>(local_dest));
-}
-extern "C"
 JNIEXPORT jint JNICALL
 Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_retroRun(JNIEnv *env, jobject thiz) {
     return retro_run();
@@ -303,7 +292,69 @@ Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_deserializeState(JNI
     auto bytes = env->GetByteArrayElements(data, &isCopy);
     if (!retro_unserialize(bytes, env->GetArrayLength(data))) {
         core_log(RETRO_LOG_ERROR, "Could not load savestate, core returned error");
+        env->ReleaseByteArrayElements(data, bytes, 0);
         return false;
     }
+    env->ReleaseByteArrayElements(data, bytes, 0);
     return true;
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_setPCBreakpoint(JNIEnv *env,
+                                                                            jobject thiz,
+                                                                            jbyte bank,
+                                                                            jint offset) {
+    ext_set_PC_breakpoint(bank, offset);
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_clearPCBreakpoints(JNIEnv *env,
+                                                                               jobject thiz) {
+    ext_clear_PC_breakpoints();
+}
+extern "C"
+JNIEXPORT jint JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_getProgramCounter(JNIEnv *env,
+                                                                              jobject thiz) {
+    return ext_get_program_counter();
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_readZeropageInternal(JNIEnv *env, jobject thiz,
+                                                                                 jbyte address,
+                                                                                 jbyteArray dest
+) {
+    auto num_bytes = env->GetArrayLength(dest);
+    unsigned char local_dest[num_bytes];
+    read_zeropage(address, num_bytes, local_dest);
+    env->SetByteArrayRegion(dest, 0, num_bytes, reinterpret_cast<const jbyte *>(local_dest));
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_readWramInternal(JNIEnv *env, jobject thiz,
+                                                                             jbyte bank, jint address,
+                                                                             jbyteArray dest
+) {
+    auto num_bytes = env->GetArrayLength(dest);
+    unsigned char local_dest[num_bytes];
+    read_wram(bank, address, num_bytes, local_dest);
+    env->SetByteArrayRegion(dest, 0, num_bytes, reinterpret_cast<const jbyte *>(local_dest));
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_writeWramByte(JNIEnv *env, jobject thiz,
+                                                                          jbyte bank, jint address,
+                                                                          jbyte byte
+) {
+    write_wram_byte(bank, address, byte);
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_readRomInternal(JNIEnv *env, jobject thiz,
+                                                                            jbyte bank, jint address,
+                                                                            jbyteArray dest) {
+    auto num_bytes = env->GetArrayLength(dest);
+    unsigned char local_dest[num_bytes];
+    read_rom(bank, address, num_bytes, local_dest);
+    env->SetByteArrayRegion(dest, 0, num_bytes, reinterpret_cast<const jbyte *>(local_dest));
 }
