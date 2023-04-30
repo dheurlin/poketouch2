@@ -1,23 +1,12 @@
 package xyz.heurlin.poketouch.emulator.libretro
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Environment
-import androidx.activity.ComponentActivity
-import androidx.activity.result.ActivityResultCaller
-import androidx.activity.result.ActivityResultCaller.*
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.contract.ActivityResultContracts.*
-import androidx.compose.ui.graphics.Path
-import androidx.core.content.ContextCompat
 import xyz.heurlin.poketouch.Button
 import xyz.heurlin.poketouch.ControllerState
 import xyz.heurlin.poketouch.DpadDirection
-import xyz.heurlin.poketouch.components.findActivity
-import xyz.heurlin.poketouch.util.withPermission
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -25,13 +14,13 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.jar.Manifest
 import kotlin.concurrent.thread
 
 class GambatteFrontend(
     private val context: Context,
+    private val bridge: ILibretroBridge,
     private val screenView: IScreenView,
-    private val controllerState: ControllerState,
+    private val controllerState: ControllerState
 ) {
     private val audio = AudioTrack.Builder()
         .setAudioFormat(
@@ -49,55 +38,19 @@ class GambatteFrontend(
 
     var backPressed = false
 
-    companion object {
-        init {
-            System.loadLibrary("poketouch")
-        }
-    }
-
     init {
-        retroInit()
+        bridge.setAudioCb(::audioBatchCallback)
+        bridge.setVideoCb(::videoRefreshCallback)
+        bridge.retroInit()
     }
-
-    private external fun retroInit(): Unit
-    private external fun coreLoadGame(bytes: ByteArray): Boolean
-    private external fun readRomBytes_(bank: Byte, gameAddress: Int, dest: ByteArray)
-
-    private external fun setInput(
-        a: Boolean,
-        b: Boolean,
-        start: Boolean,
-        select: Boolean,
-        up: Boolean,
-        down: Boolean,
-        left: Boolean,
-        right: Boolean
-    )
-
-    private external fun retroRun(): Int;
-
-    private external fun serializeSize(): Long
-
-    private external fun serializeState(dest: ByteArray): Boolean
-
-    private external fun deserializeState(data: ByteArray): Boolean
 
     private fun getSaveState(): ByteArray {
-        val dest = ByteArray(serializeSize().toInt())
-        val res = serializeState(dest)
+        val dest = ByteArray(bridge.serializeSize().toInt())
+        val res = bridge.serializeState(dest)
         if (!res) {
             throw Error("Failed to generate savestate: core returned error")
         }
         return dest
-    }
-
-    private fun audioBatchCallback(data: ByteBuffer, frames: Long): Long {
-        // TODO Popping when audio goes to zero; implement slight fade-out to prevent?
-        return audio.write(data, frames.toInt() * 2 * 2, AudioTrack.WRITE_BLOCKING).toLong()
-    }
-
-    private fun videoRefreshCallback(buffer: ByteBuffer, width: Int, height: Int, pitch: Long) {
-        return screenView.videoRefresh(buffer, width, height, pitch)
     }
 
     fun saveState() {
@@ -129,11 +82,11 @@ class GambatteFrontend(
                 println("Save state not created...")
                 return
             }
-            val data = ByteArray(serializeSize().toInt())
+            val data = ByteArray(bridge.serializeSize().toInt())
             FileInputStream(file).use {
                 it.read(data)
             }
-            deserializeState(data)
+            bridge.deserializeState(data)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -146,7 +99,7 @@ class GambatteFrontend(
         } else {
             false
         }
-        setInput(
+        bridge.setInput(
             a = controllerState.buttonsPressed[Button.A] == true,
             b = b,
             start = controllerState.buttonsPressed[Button.Start] == true,
@@ -158,10 +111,19 @@ class GambatteFrontend(
         )
     }
 
+    private fun audioBatchCallback(data: ByteBuffer, frames: Long): Long {
+        // TODO Popping when audio goes to zero; implement slight fade-out to prevent?
+        return audio.write(data, frames.toInt() * 2 * 2, AudioTrack.WRITE_BLOCKING).toLong()
+    }
+
+    private fun videoRefreshCallback(buffer: ByteBuffer, width: Int, height: Int, pitch: Long) {
+        return screenView.videoRefresh(buffer, width, height, pitch)
+    }
+
     fun run(): Thread {
         return thread {
             while (true) {
-                retroRun()
+                bridge.retroRun()
                 screenView.videoRender()
                 setJoypadInput()
             }
@@ -172,7 +134,7 @@ class GambatteFrontend(
         val bytes = rom.buffered().use {
             it.readBytes()
         }
-        val res = coreLoadGame(bytes);
+        val res = bridge.coreLoadGame(bytes);
         println("Load game results: $res");
     }
 }

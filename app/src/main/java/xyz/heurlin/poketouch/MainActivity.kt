@@ -11,21 +11,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import xyz.heurlin.poketouch.components.EmulatorView
-import xyz.heurlin.poketouch.components.MoveSelection
-import xyz.heurlin.poketouch.emulator.Charmap
-import xyz.heurlin.poketouch.emulator.Offsets
-import xyz.heurlin.poketouch.emulator.libretro.GambatteFrontend
-import xyz.heurlin.poketouch.types.MovePP
-import xyz.heurlin.poketouch.types.PokemonMove
-import xyz.heurlin.poketouch.types.PokemonType
 import xyz.heurlin.poketouch.ui.theme.PokeTouch2Theme
 import xyz.heurlin.poketouch.util.withPermission
-import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

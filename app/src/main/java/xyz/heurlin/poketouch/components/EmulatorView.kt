@@ -10,11 +10,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
-import xyz.heurlin.poketouch.ControllerMode
 import xyz.heurlin.poketouch.EmulatorViewModel
 import xyz.heurlin.poketouch.R
-import xyz.heurlin.poketouch.emulator.Emulator
 import xyz.heurlin.poketouch.emulator.libretro.GambatteFrontend
+import xyz.heurlin.poketouch.emulator.libretro.LibretroBridge
 
 fun Context.findActivity(): Activity {
     var context = this
@@ -30,7 +29,6 @@ fun EmulatorView(
     modifier: Modifier = Modifier,
     emulatorViewModel: EmulatorViewModel = viewModel()
 ) {
-//    var emulator by remember { mutableStateOf<Emulator?>(null) }
     var emulator by remember { mutableStateOf<GambatteFrontend?>(null) }
     val controllerMode = emulatorViewModel.controllerMode
 
@@ -43,6 +41,7 @@ fun EmulatorView(
             println("Screen created!, $screen")
             emulator = GambatteFrontend(
                 cxt,
+                LibretroBridge(),
                 screen,
                 emulatorViewModel.controllerState,
             ).apply {

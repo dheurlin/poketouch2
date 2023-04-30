@@ -19,7 +19,7 @@ unsigned char *zeropage_ptr = nullptr;
 unsigned char *wram_ptr = nullptr;
 unsigned char *rom_ptr = nullptr;
 
-int16_t g_joy[RETRO_DEVICE_ID_JOYPAD_R3+1] = { 0 };
+int16_t g_joy[RETRO_DEVICE_ID_JOYPAD_R3 + 1] = {0};
 
 void set_memory_map_pointers(struct retro_memory_map *desc) {
     int i;
@@ -136,7 +136,7 @@ static void core_video_refresh(const void *data, unsigned width, unsigned height
     auto bb = env->NewDirectByteBuffer((void *) data, VIDEO_BUFF_SIZE);
     auto cls = env->GetObjectClass(my_frontend);
     auto mid = env->GetMethodID(cls, "videoRefreshCallback", "(Ljava/nio/ByteBuffer;IIJ)V");
-    env->CallVoidMethod(my_frontend, mid, bb, (jint)width, (jint)height, (jlong)pitch);
+    env->CallVoidMethod(my_frontend, mid, bb, (jint) width, (jint) height, (jlong) pitch);
 }
 
 
@@ -192,7 +192,7 @@ Java_xyz_heurlin_poketouch_MainActivity_retroLibraryName(JNIEnv *env, jobject th
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_retroInit(JNIEnv *env, jobject thiz) {
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_retroInit(JNIEnv *env, jobject thiz) {
     env->GetJavaVM(&jvm);
     my_frontend = env->NewGlobalRef(thiz);
 
@@ -206,9 +206,9 @@ Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_retroInit(JNIEnv *
 }
 extern "C"
 JNIEXPORT jboolean JNICALL
-Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_coreLoadGame(JNIEnv *env,
-                                                                           jobject thiz,
-                                                                           jbyteArray bytes) {
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_coreLoadGame(JNIEnv *env,
+                                                                         jobject thiz,
+                                                                         jbyteArray bytes) {
     jboolean isCopy;
     jbyte *b = env->GetByteArrayElements(bytes, &isCopy);
 
@@ -222,11 +222,11 @@ Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_coreLoadGame(JNIEn
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_readRomBytes_1(JNIEnv *env,
-                                                                             jobject thiz,
-                                                                             jbyte bank,
-                                                                             jint game_address,
-                                                                             jbyteArray dest) {
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_readRomBytes_1(JNIEnv *env,
+                                                                           jobject thiz,
+                                                                           jbyte bank,
+                                                                           jint game_address,
+                                                                           jbyteArray dest) {
     auto num_bytes = env->GetArrayLength(dest);
     unsigned char local_dest[num_bytes];
     read_rom(bank, game_address, num_bytes, local_dest);
@@ -234,22 +234,22 @@ Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_readRomBytes_1(JNI
 }
 extern "C"
 JNIEXPORT jint JNICALL
-Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_retroRun(JNIEnv *env, jobject thiz) {
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_retroRun(JNIEnv *env, jobject thiz) {
     return retro_run();
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_setInput(JNIEnv *env, jobject thiz,
-                                                                       jboolean a, jboolean b,
-                                                                       jboolean start,
-                                                                       jboolean select, jboolean up,
-                                                                       jboolean down, jboolean left,
-                                                                       jboolean right) {
-    for (auto &btn : g_joy) {
-       btn = 0;
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_setInput(JNIEnv *env, jobject thiz,
+                                                                     jboolean a, jboolean b,
+                                                                     jboolean start,
+                                                                     jboolean select, jboolean up,
+                                                                     jboolean down, jboolean left,
+                                                                     jboolean right) {
+    for (auto &btn: g_joy) {
+        btn = 0;
     }
     if (a) {
-       g_joy[RETRO_DEVICE_ID_JOYPAD_A] = 1;
+        g_joy[RETRO_DEVICE_ID_JOYPAD_A] = 1;
     }
     if (b) {
         g_joy[RETRO_DEVICE_ID_JOYPAD_B] = 1;
@@ -275,15 +275,15 @@ Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_setInput(JNIEnv *e
 }
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_serializeSize(JNIEnv *env,
-                                                                            jobject thiz) {
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_serializeSize(JNIEnv *env,
+                                                                          jobject thiz) {
     return retro_serialize_size();
 }
 extern "C"
 JNIEXPORT jboolean JNICALL
-Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_serializeState(JNIEnv *env,
-                                                                             jobject thiz,
-                                                                             jbyteArray dest) {
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_serializeState(JNIEnv *env,
+                                                                           jobject thiz,
+                                                                           jbyteArray dest) {
     auto save_size = retro_serialize_size();
     unsigned char saveblob[save_size];
     if (!retro_serialize(saveblob, save_size)) {
@@ -296,9 +296,9 @@ Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_serializeState(JNI
 }
 extern "C"
 JNIEXPORT jboolean JNICALL
-Java_xyz_heurlin_poketouch_emulator_libretro_GambatteFrontend_deserializeState(JNIEnv *env,
-                                                                               jobject thiz,
-                                                                               jbyteArray data) {
+Java_xyz_heurlin_poketouch_emulator_libretro_LibretroBridge_deserializeState(JNIEnv *env,
+                                                                             jobject thiz,
+                                                                             jbyteArray data) {
     jboolean isCopy;
     auto bytes = env->GetByteArrayElements(data, &isCopy);
     if (!retro_unserialize(bytes, env->GetArrayLength(data))) {
