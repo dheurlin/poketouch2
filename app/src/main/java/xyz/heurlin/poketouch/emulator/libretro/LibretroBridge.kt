@@ -38,15 +38,12 @@ class LibretroBridge() : ILibretroBridge, ILibretroExtensionBridge, ILibretroExt
     external override fun serializeState(dest: ByteArray): Boolean
     external override fun deserializeState(data: ByteArray): Boolean
     external override fun setPCBreakpoint(bank: Byte, offset: Int)
-
     external override fun clearPCBreakpoints()
     external override fun getProgramCounter(): Int
-
-    external fun readZeropageInternal(address: Int, dest: ByteArray)
-    external fun readWramInternal(bank: Byte, address: Int, dest: ByteArray)
-
+    private external fun readZeropageInternal(address: Int, dest: ByteArray)
+    private external fun readWramInternal(bank: Byte, address: Int, dest: ByteArray)
     external override fun writeWramByte(bank: Byte, address: Int, byte: Byte)
-    external fun readRomInternal(bank: Byte, address: Int, dest: ByteArray)
+    private external fun readRomInternal(bank: Byte, address: Int, dest: ByteArray)
 
     override fun setVideoCb(cb: (buffer: ByteBuffer, width: Int, height: Int, pitch: Long) -> Unit) {
         videoCb = cb
@@ -65,21 +62,21 @@ class LibretroBridge() : ILibretroBridge, ILibretroExtensionBridge, ILibretroExt
     }
 
     override fun readWram(bank: Byte, address: Int, numBytes: Int): ByteArray {
-        val dest = ByteArray(numBytes)
-        readWramInternal(bank, address, dest)
-        return dest
+        return ByteArray(numBytes).apply {
+            readWramInternal(bank, address, this)
+        }
     }
 
     override fun readRom(bank: Byte, address: Int, numBytes: Int): ByteArray {
-        val dest = ByteArray(numBytes)
-        readRomInternal(bank, address, dest)
-        return dest
+        return ByteArray(numBytes).apply {
+            readRomInternal(bank, address, this)
+        }
     }
 
     override fun readZeropage(address: Int, numBytes: Int): ByteArray {
-        val dest = ByteArray(numBytes)
-        readZeropageInternal(address, dest)
-        return dest
+        return ByteArray(numBytes).apply {
+            readZeropageInternal(address, this)
+        }
     }
 
 }
